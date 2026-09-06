@@ -7,6 +7,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { connectDB, disconnectDB } from './config/db.js';
 import { assertJwtConfig } from './config/jwt.js';
 import authRoutes from './routes/authRoutes.js';
+import caseRoutes from './routes/caseRoutes.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -43,9 +44,9 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/cases', caseRoutes);
 
 // Route modules mount here as they land:
-//   app.use('/api/cases', caseRoutes);
 //   app.use('/api/knowledge', knowledgeRoutes);
 
 app.use((req, res) => {
@@ -68,8 +69,16 @@ export const io = new SocketIOServer(server, {
   cors: { origin: allowedOrigins, credentials: true },
 });
 
+// Lets controllers reach the socket server via `req.app.get('io')` without
+// importing this module and creating a cycle.
+app.set('io', io);
+
 io.on('connection', (socket) => {
   console.log(`[socket] connected ${socket.id}`);
+
+  // Dashboard clients subscribe here to get new cases pushed to them.
+  // TODO: authenticate this handshake before it carries patient data.
+  socket.on('doctors:join', () => socket.join('doctors'));
 
   // Rooms let the server push case updates to exactly one participant set:
   // the patient, the assigned doctor, and (for high-danger cases) dispatch.
