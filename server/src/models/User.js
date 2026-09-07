@@ -11,11 +11,19 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 120,
     },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+    },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
-      unique: true,
       trim: true,
+      sparse: true,
+      unique: true,
       // 10-digit Indian mobile, optionally with +91 / 0 prefix.
       match: [/^(?:\+91|0)?[6-9]\d{9}$/, 'Enter a valid Indian mobile number'],
     },
@@ -43,16 +51,27 @@ const userSchema = new mongoose.Schema(
     },
     abhaId: {
       type: String,
+      default: null,
       trim: true,
       sparse: true,
       unique: true,
     },
+    refreshToken: {
+      type: String,
+      // Never leaked in normal queries — selected explicitly when needed.
+      select: false,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
-    timestamps: true,
+    timestamps: true, // also gives updatedAt
     toJSON: {
       transform: (_doc, ret) => {
         delete ret.password;
+        delete ret.refreshToken;
         return ret;
       },
     },
@@ -76,6 +95,15 @@ userSchema.methods.comparePassword = function comparePassword(candidate) {
     throw new Error('Password not loaded; query with .select("+password")');
   }
   return bcrypt.compare(candidate, this.password);
+};
+
+/**
+ * PRD-spec alias for comparePassword.
+ * @param {string} enteredPassword plaintext password
+ * @returns {Promise<boolean>}
+ */
+userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
+  return this.comparePassword(enteredPassword);
 };
 
 const User = mongoose.model('User', userSchema);

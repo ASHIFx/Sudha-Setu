@@ -1,5 +1,12 @@
+import crypto from 'node:crypto';
 import User, { USER_ROLES } from '../models/User.js';
-import { signAccessToken } from '../config/jwt.js';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+  setTokenCookies,
+  clearTokenCookies,
+} from '../utils/jwt.js';
 
 /**
  * Roles a client may pick during open registration. Elevated roles are granted
@@ -8,33 +15,55 @@ import { signAccessToken } from '../config/jwt.js';
  */
 const SELF_ASSIGNABLE_ROLES = ['patient'];
 
+/** Build the public user payload returned to the client. */
 const toPublicUser = (user) => ({
   id: user._id,
   name: user.name,
-  phone: user.phone,
+  email: user.email,
   role: user.role,
-  languagePreference: user.languagePreference,
-  abhaId: user.abhaId,
+  abhaId: user.abhaId ?? null,
 });
 
-const respondWithToken = (res, status, user) => {
-  const token = signAccessToken({ id: user._id, role: user.role });
-  res.status(status).json({ token, user: toPublicUser(user) });
-};
+/**
+ * Hash the refresh token before storing it in the DB. This way, if the
+ * database is compromised, the raw tokens cannot be replayed.
+ */
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 /**
- * POST /api/auth/register
- * Body: { name, phone, password, languagePreference?, abhaId? }
+ * Generate both tokens, store the hashed refresh token in the DB, set cookies,
+ * and respond with the user payload.
+ */
+const issueTokensAndRespond = async (res, user, statusCode = 200) => {
+  const accessToken = generateAccessToken(user._id, user.role);
+  const refreshToken = generateRefreshToken(user._id);
+
+  // Persist the hashed refresh token so we can validate it on /refresh and
+  // revoke it on /logout.
+  user.refreshToken = hashToken(refreshToken);
+  await user.save({ validateBeforeSave: false });
+
+  setTokenCookies(res, accessToken, refreshToken);
+
+  res.status(statusCode).json({ user: toPublicUser(user) });
+};
+
+/* ------------------------------------------------------------------ */
+/*  POST /api/auth/register                                           */
+/* ------------------------------------------------------------------ */
+/**
+ * Body: { name, email, password, abhaId?, role? }
  *
  * Hashing is handled by the `pre('save')` hook on the User model, so the
  * plaintext password never needs to be touched here.
  */
 export const register = async (req, res, next) => {
   try {
-    const { name, phone, password, languagePreference, abhaId, role } = req.body ?? {};
+    const { name, email, password, abhaId, role } = req.body ?? {};
 
-    if (!name || !phone || !password) {
-      return res.status(400).json({ message: 'name, phone and password are required' });
+    // ---- validation ----
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'name, email and password are required' });
     }
 
     if (role && !SELF_ASSIGNABLE_ROLES.includes(role)) {
@@ -43,22 +72,21 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const existing = await User.findOne({ phone });
+    const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
-      return res.status(409).json({ message: 'An account with this phone number already exists' });
+      return res.status(400).json({ message: 'An account with this email already exists' });
     }
 
     const user = await User.create({
       name,
-      phone,
+      email,
       password,
-      languagePreference,
       // Empty string would trip the sparse unique index on a second signup.
       abhaId: abhaId || undefined,
       role: 'patient',
     });
 
-    respondWithToken(res, 201, user);
+    await issueTokensAndRespond(res, user, 201);
   } catch (err) {
     if (err.name === 'ValidationError') {
       return res.status(400).json({
@@ -70,41 +98,115 @@ export const register = async (req, res, next) => {
     }
     // Unique index raced past the findOne check above.
     if (err.code === 11000) {
-      return res.status(409).json({ message: 'An account with these details already exists' });
+      return res.status(400).json({ message: 'An account with these details already exists' });
     }
     next(err);
   }
 };
 
+/* ------------------------------------------------------------------ */
+/*  POST /api/auth/login                                              */
+/* ------------------------------------------------------------------ */
 /**
- * POST /api/auth/login
- * Body: { phone, password }
+ * Body: { email, password }
  */
 export const login = async (req, res, next) => {
   try {
-    const { phone, password } = req.body ?? {};
+    const { email, password } = req.body ?? {};
 
-    if (!phone || !password) {
-      return res.status(400).json({ message: 'phone and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'email and password are required' });
     }
 
     // `password` is `select: false` on the schema, so ask for it explicitly.
-    const user = await User.findOne({ phone }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
     // One message for both "no such user" and "wrong password" so the endpoint
-    // can't be used to enumerate which phone numbers are registered.
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Invalid phone number or password' });
+    // can't be used to enumerate which emails are registered.
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    respondWithToken(res, 200, user);
+    await issueTokensAndRespond(res, user, 200);
   } catch (err) {
     next(err);
   }
 };
 
+/* ------------------------------------------------------------------ */
+/*  POST /api/auth/logout                                             */
+/* ------------------------------------------------------------------ */
+export const logout = async (req, res, next) => {
+  try {
+    // Read the refresh token so we can revoke it from the DB.
+    const token = req.cookies?.refreshToken;
+
+    if (token) {
+      const hashed = hashToken(token);
+      // Unset the stored refresh token so it can never be replayed.
+      await User.findOneAndUpdate({ refreshToken: hashed }, { refreshToken: null });
+    }
+
+    clearTokenCookies(res);
+
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/* ------------------------------------------------------------------ */
+/*  POST /api/auth/refresh                                            */
+/* ------------------------------------------------------------------ */
+export const refresh = async (req, res, next) => {
+  try {
+    // Read refresh token from cookie first, then Authorization header fallback.
+    const token =
+      req.cookies?.refreshToken ||
+      (req.headers.authorization?.startsWith('Bearer ') && req.headers.authorization.slice(7));
+
+    if (!token) {
+      return res.status(401).json({ message: 'No refresh token provided' });
+    }
+
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch {
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    // Verify the token is still stored in the DB (not revoked).
+    const hashed = hashToken(token);
+    const user = await User.findOne({ _id: payload.sub }).select('+refreshToken');
+
+    if (!user || user.refreshToken !== hashed) {
+      return res.status(401).json({ message: 'Refresh token revoked or invalid' });
+    }
+
+    // Issue only a new access token (keep existing refresh token alive).
+    const newAccessToken = generateAccessToken(user._id, user.role);
+
+    // Update only the access token cookie.
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'strict' : 'lax',
+      path: '/',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.status(200).json({ message: 'Access token refreshed' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/* ------------------------------------------------------------------ */
+/*  GET /api/auth/me                                                  */
+/* ------------------------------------------------------------------ */
 /**
- * GET /api/auth/me
  * Returns the caller's own profile. `protect` has already loaded the document.
  */
 export const getMe = async (req, res) => {

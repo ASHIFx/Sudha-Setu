@@ -2,12 +2,14 @@ import 'dotenv/config';
 import http from 'node:http';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
 
 import { connectDB, disconnectDB } from './config/db.js';
 import { assertJwtConfig } from './config/jwt.js';
 import authRoutes from './routes/authRoutes.js';
 import caseRoutes from './routes/caseRoutes.js';
+import kbRoutes from './routes/kbRoutes.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -30,6 +32,7 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -45,9 +48,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
-
-// Route modules mount here as they land:
-//   app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/kb', kbRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });

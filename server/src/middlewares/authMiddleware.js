@@ -2,22 +2,30 @@ import { verifyAccessToken } from '../config/jwt.js';
 import User from '../models/User.js';
 
 /**
- * Verifies the bearer token and attaches the live user document to `req.user`.
+ * Verifies the access token and attaches the live user document to `req.user`.
+ *
+ * Token lookup order:
+ *   1. `accessToken` HTTP-Only cookie (preferred — set by the auth controller)
+ *   2. `Authorization: Bearer <token>` header (mobile / API clients)
  *
  * The user is re-read from the database on every request rather than trusted
  * from the token body, so a role change or account deletion takes effect
  * immediately instead of waiting for the token to expire.
  */
 export const protect = async (req, res, next) => {
-  const header = req.headers.authorization || '';
+  // 1. Try cookie first
+  let token = req.cookies?.accessToken;
 
-  if (!header.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Not authorised: no bearer token provided' });
+  // 2. Fall back to Authorization header
+  if (!token) {
+    const header = req.headers.authorization || '';
+    if (header.startsWith('Bearer ')) {
+      token = header.slice(7).trim();
+    }
   }
 
-  const token = header.slice(7).trim();
   if (!token) {
-    return res.status(401).json({ message: 'Not authorised: empty bearer token' });
+    return res.status(401).json({ message: 'Not authorised: no token provided' });
   }
 
   let payload;

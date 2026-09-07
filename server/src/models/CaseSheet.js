@@ -7,6 +7,10 @@ export const CASE_STATUSES = [
   'in_consultation',
   'escalated_human',
   'emergency_alerted',
+  // Doctor workflow additions
+  'pending_support',
+  'queued_for_doctor',
+  'completed',
 ];
 
 export const DIALOGUE_SENDERS = ['patient', 'bot', 'doctor', 'support'];
@@ -53,6 +57,8 @@ const prescriptionItemSchema = new mongoose.Schema(
     medicineName: { type: String, required: true, trim: true },
     dosage: { type: String, trim: true },
     timing: { type: String, trim: true },
+    duration: { type: String, trim: true },
+    instructions: { type: String, trim: true },
   },
   { _id: false }
 );
