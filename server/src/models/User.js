@@ -24,14 +24,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       sparse: true,
       unique: true,
-      // 10-digit Indian mobile, optionally with +91 / 0 prefix.
       match: [/^(?:\+91|0)?[6-9]\d{9}$/, 'Enter a valid Indian mobile number'],
     },
     password: {
       type: String,
       required: [true, 'Password is required'],
       minlength: [8, 'Password must be at least 8 characters'],
-      // Never ships in a query result unless explicitly selected.
       select: false,
     },
     role: {
@@ -51,14 +49,13 @@ const userSchema = new mongoose.Schema(
     },
     abhaId: {
       type: String,
-      default: null,
+      default: undefined,
       trim: true,
       sparse: true,
       unique: true,
     },
     refreshToken: {
       type: String,
-      // Never leaked in normal queries — selected explicitly when needed.
       select: false,
     },
     createdAt: {
@@ -67,7 +64,7 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // also gives updatedAt
+    timestamps: true,
     toJSON: {
       transform: (_doc, ret) => {
         delete ret.password;
@@ -78,30 +75,18 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Mongoose 9 does not pass `next` to async middleware -- resolving the promise
-// is what advances the chain. Taking a `next` param here would throw.
 userSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-/**
- * @param {string} candidate plaintext password from the login request
- * @returns {Promise<boolean>}
- */
 userSchema.methods.comparePassword = function comparePassword(candidate) {
-  // Requires the document to have been loaded with `.select('+password')`.
   if (!this.password) {
     throw new Error('Password not loaded; query with .select("+password")');
   }
   return bcrypt.compare(candidate, this.password);
 };
 
-/**
- * PRD-spec alias for comparePassword.
- * @param {string} enteredPassword plaintext password
- * @returns {Promise<boolean>}
- */
 userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
   return this.comparePassword(enteredPassword);
 };

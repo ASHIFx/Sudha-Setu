@@ -6,7 +6,8 @@ import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
 
 import { connectDB, disconnectDB } from './config/db.js';
-import { assertJwtConfig } from './config/jwt.js';
+import { assertJwtConfig, verifyAccessToken } from './config/jwt.js';
+import User from './models/User.js';
 import authRoutes from './routes/authRoutes.js';
 import caseRoutes from './routes/caseRoutes.js';
 import kbRoutes from './routes/kbRoutes.js';
