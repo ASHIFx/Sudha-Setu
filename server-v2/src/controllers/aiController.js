@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Chat from '../models/Chat.js';
+import CaseSheet from '../models/CaseSheet.js';
 import { sendChatMessage } from '../services/aiService.js';
 
 const FALLBACK_REPLY =
@@ -8,10 +9,6 @@ const FALLBACK_REPLY =
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-/**
- * POST /api/ai/chat
- * Body: { message: string, chatId?: string, caseId?: string }
- */
 export const chat = async (req, res, next) => {
   try {
     const { message, chatId, caseId } = req.body ?? {};
@@ -26,7 +23,6 @@ export const chat = async (req, res, next) => {
         .json({ message: `message must be ${MAX_MESSAGE_LENGTH} characters or fewer` });
     }
 
-    // ── Resolve or create the Chat session ──────────────────────────────────
     let chatDoc;
 
     if (chatId) {
@@ -38,21 +34,33 @@ export const chat = async (req, res, next) => {
         return res.status(404).json({ message: 'Chat session not found' });
       }
     } else {
-      // Start a new session
+      let linkedCase;
+      if (caseId !== undefined) {
+        if (!mongoose.isValidObjectId(caseId)) {
+          return res.status(400).json({ message: 'Invalid caseId' });
+        }
+        linkedCase = await CaseSheet.findById(caseId).select('patientId');
+        if (!linkedCase) {
+          return res.status(404).json({ message: 'Case sheet not found' });
+        }
+        const canAccessCase =
+          String(linkedCase.patientId) === String(req.user._id) ||
+          ['doctor', 'support', 'admin'].includes(req.user.role);
+        if (!canAccessCase) {
+          return res.status(403).json({ message: 'Forbidden: this case belongs to another patient' });
+        }
+      }
+
       chatDoc = await Chat.create({
         userId: req.user._id,
-        caseId:
-          caseId && mongoose.isValidObjectId(caseId) ? caseId : undefined,
+        caseId: linkedCase?._id,
         messages: [],
       });
     }
 
-    // ── Append the user message ─────────────────────────────────────────────
     const userMsg = { sender: 'user', content: message.trim(), timestamp: new Date() };
     chatDoc.messages.push(userMsg);
 
-    // ── Call Gemini (pass history WITHOUT the current message) ──────────────
-    // storedMessages before push = priorHistory; we slice to exclude last item
     const priorMessages = chatDoc.messages.slice(0, -1);
 
     let replyText = FALLBACK_REPLY;
@@ -60,10 +68,8 @@ export const chat = async (req, res, next) => {
       replyText = await sendChatMessage(priorMessages, message.trim());
     } catch (aiErr) {
       console.warn('[aiController] Gemini call failed:', aiErr.message);
-      // replyText stays as FALLBACK_REPLY — do NOT propagate as HTTP error
     }
 
-    // ── Append AI reply & persist ────────────────────────────────────────────
     const aiMsg = { sender: 'ai', content: replyText, timestamp: new Date() };
     chatDoc.messages.push(aiMsg);
     await chatDoc.save();
@@ -78,10 +84,6 @@ export const chat = async (req, res, next) => {
   }
 };
 
-/**
- * GET /api/ai/chat/:chatId
- * Returns the full message history for a chat session owned by the requesting user.
- */
 export const getChatHistory = async (req, res, next) => {
   try {
     const { chatId } = req.params;

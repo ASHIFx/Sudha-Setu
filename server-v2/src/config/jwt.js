@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const DEFAULT_EXPIRES_IN = '7d';
+const DEFAULT_EXPIRES_IN = '15m';
 
 const getSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -19,7 +19,7 @@ export const assertJwtConfig = () => {
 
 export const signAccessToken = ({ id, role }) =>
   jwt.sign({ sub: String(id), role }, getSecret(), {
-    expiresIn: process.env.JWT_EXPIRES_IN || DEFAULT_EXPIRES_IN,
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || process.env.JWT_EXPIRES_IN || DEFAULT_EXPIRES_IN,
     issuer: 'sudha-setu',
   });
 

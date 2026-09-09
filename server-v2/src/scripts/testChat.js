@@ -1,9 +1,4 @@
-/**
- * testChat.js — Sudha Setu AI Chat endpoint test suite
- *
- * Usage:  node src/scripts/testChat.js
- * Prereq: Server running on http://localhost:5000 (npm run dev / node src/server.js)
- */
+import 'dotenv/config';
 
 const BASE = process.env.BASE_URL || 'http://localhost:5000';
 const API  = `${BASE}/api/ai`;
@@ -14,8 +9,6 @@ const TEST_NAME     = 'Chat Test User';
 
 let accessCookies = '';
 let sessionChatId = '';
-
-/* ── helpers ─────────────────────────────────────────────────────────── */
 
 const extractCookies = (res) => {
   const raw = res.headers.getSetCookie?.() || [];
@@ -57,8 +50,6 @@ const json = (method, url, body, cookies = '') =>
     ...(body !== null ? { body: JSON.stringify(body) } : {}),
   });
 
-/* ── setup: register + verify a test user ──────────────────────────────── */
-
 const setupUser = async () => {
   const mongoose = (await import('mongoose')).default;
   await import('dotenv/config');
@@ -69,46 +60,37 @@ const setupUser = async () => {
   const User = (await import('../models/User.js')).default;
   const Otp  = (await import('../models/Otp.js')).default;
 
-  // Register
   await json('POST', `${BASE}/api/auth/register`, {
     name: TEST_NAME, email: TEST_EMAIL, password: TEST_PASSWORD,
   });
 
-  // Read OTP from DB
   const user = await User.findOne({ email: TEST_EMAIL });
   const otp  = await Otp.findOne({ userId: user._id, purpose: 'verify_email' }).sort({ _id: -1 });
 
-  // Verify → receive cookies
   const verifyRes = await json('POST', `${BASE}/api/auth/verify-otp`, {
     email: TEST_EMAIL, code: otp?.code,
   });
   accessCookies = mergeCookies(accessCookies, extractCookies(verifyRes));
 
-  // Keep Mongoose open; testChat closes it at the end
 };
-
-/* ── tests ───────────────────────────────────────────────────────────── */
 
 const run = async () => {
   console.log(`\n🤖 Sudha Setu AI Chat Tests — ${API}\n${'─'.repeat(55)}`);
 
   await setupUser();
 
-  // ── [1] POST /chat — no token → 401 ───────────────────────────────────
   console.log('\n[1] POST /chat — no auth token → 401');
   {
     const res = await json('POST', `${API}/chat`, { message: 'Hello' });
     assert(res.status === 401, `Status 401 (got ${res.status})`);
   }
 
-  // ── [2] POST /chat — missing body → 400 ───────────────────────────────
   console.log('\n[2] POST /chat — empty message body → 400');
   {
     const res = await json('POST', `${API}/chat`, { message: '' }, accessCookies);
     assert(res.status === 400, `Status 400 (got ${res.status})`);
   }
 
-  // ── [3] POST /chat — oversized message → 400 ─────────────────────────
   console.log('\n[3] POST /chat — message too long → 400');
   {
     const res = await json(
@@ -119,7 +101,6 @@ const run = async () => {
     assert(res.status === 400, `Status 400 (got ${res.status})`);
   }
 
-  // ── [4] POST /chat — valid first message → 200 + reply + chatId ───────
   console.log('\n[4] POST /chat — first message (new session)');
   {
     const res  = await json(
@@ -136,7 +117,6 @@ const run = async () => {
     assert(body.messageCount === 2,   `messageCount is 2 (got ${body.messageCount})`);
   }
 
-  // ── [5] POST /chat — follow-up in same session ─────────────────────────
   console.log('\n[5] POST /chat — follow-up message (same chatId)');
   {
     const res  = await json(
@@ -152,14 +132,12 @@ const run = async () => {
     assert(body.messageCount === 4,             `messageCount is 4 (got ${body.messageCount})`);
   }
 
-  // ── [6] GET /chat/:chatId — no token → 401 ────────────────────────────
   console.log('\n[6] GET /chat/:chatId — no auth token → 401');
   {
     const res = await fetch(`${API}/chat/${sessionChatId}`);
     assert(res.status === 401, `Status 401 (got ${res.status})`);
   }
 
-  // ── [7] GET /chat/:chatId — retrieve full history ─────────────────────
   console.log('\n[7] GET /chat/:chatId — retrieve full history');
   {
     const res  = await fetch(`${API}/chat/${sessionChatId}`, {
@@ -177,8 +155,6 @@ const run = async () => {
     assert(typeof body.messageCount === 'number', `messageCount field present (${body.messageCount})`);
   }
 
-  // ── [8] GET /chat/:chatId — wrong user cannot access another's chat ────
-  // We test this by using a bogus chatId that is valid ObjectId format
   console.log('\n[8] GET /chat/:id — non-existent chatId → 404');
   {
     const fakeId = '000000000000000000000001';
@@ -188,7 +164,6 @@ const run = async () => {
     assert(res.status === 404, `Status 404 (got ${res.status})`);
   }
 
-  // ── [9] POST /chat — invalid chatId → 404 ─────────────────────────────
   console.log('\n[9] POST /chat — non-existent chatId → 404');
   {
     const res  = await json(
@@ -199,7 +174,6 @@ const run = async () => {
     assert(res.status === 404, `Status 404 (got ${res.status})`);
   }
 
-  // ── [10] POST /chat — malformed chatId → 400 ──────────────────────────
   console.log('\n[10] POST /chat — malformed chatId → 400');
   {
     const res  = await json(
@@ -210,7 +184,6 @@ const run = async () => {
     assert(res.status === 400, `Status 400 (got ${res.status})`);
   }
 
-  // ── close Mongoose ─────────────────────────────────────────────────────
   const mongoose = (await import('mongoose')).default;
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close(false);

@@ -41,7 +41,6 @@ const chatSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index so fetching a user's most-recent chat is fast
 chatSchema.index({ userId: 1, createdAt: -1 });
 
 const Chat = mongoose.model('Chat', chatSchema);

@@ -47,9 +47,11 @@ export const analyzeSymptoms = async (patientText) => {
     for (const keyword of rule.keywordTriggers ?? []) {
       const found = buildMatcher(keyword).exec(text);
       if (!found) continue;
-      hits.push(keyword);
-      
-      if (isNegated(text, found.index)) negatedHits += 1;
+      if (isNegated(text, found.index)) {
+        negatedHits += 1;
+      } else {
+        hits.push(keyword);
+      }
     }
 
     if (hits.length > 0) {

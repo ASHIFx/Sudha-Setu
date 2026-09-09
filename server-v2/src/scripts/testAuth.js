@@ -1,3 +1,4 @@
+import 'dotenv/config';
 
 const BASE = process.env.BASE_URL || 'http://localhost:5000';
 const API = `${BASE}/api/auth`;
@@ -8,7 +9,6 @@ const TEST_NAME = 'Test Patient';
 
 let savedCookies = '';
 
-/** Tiny helper to extract Set-Cookie headers and merge them. */
 const extractCookies = (res) => {
   const raw = res.headers.getSetCookie?.() || [];
   return raw.map((c) => c.split(';')[0]).join('; ');
@@ -42,9 +42,6 @@ const assert = (condition, label) => {
 const run = async () => {
   console.log(`\n🔬 Sudha Setu Auth Tests — ${API}\n${'─'.repeat(50)}`);
 
-  // ──────────────────────────────────────────
-  // 1. Register a new patient → 201 + cookies
-  // ──────────────────────────────────────────
   console.log('\n[1] POST /register — new patient');
   {
     const res = await fetch(`${API}/register`, {

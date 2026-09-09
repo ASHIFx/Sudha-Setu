@@ -1,10 +1,18 @@
 import axios from 'axios';
 
+const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  "'": '&#39;',
+  '"': '&quot;',
+}[character]));
+
 export const sendOtpEmail = async (toEmail, toName, code, purpose) => {
   const subject =
     purpose === 'reset_password' ? 'Sudha Setu password reset code' : 'Verify your Sudha Setu account';
 
-  const body = `<p>Hi ${toName},</p><p>Your code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`;
+  const body = `<p>Hi ${escapeHtml(toName)},</p><p>Your code is: <strong>${escapeHtml(code)}</strong></p><p>This code expires in 10 minutes.</p>`;
 
   try {
     await axios.post(
@@ -24,9 +32,6 @@ export const sendOtpEmail = async (toEmail, toName, code, purpose) => {
       }
     );
   } catch (err) {
-    // Log but do NOT throw — the OTP is already persisted in the DB.
-    // Registration / password-reset flow should still succeed even if
-    // the email provider is temporarily unavailable or misconfigured.
     console.warn(
       `[emailService] Failed to send OTP email to ${toEmail}: ${err.message}`
     );

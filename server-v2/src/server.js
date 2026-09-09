@@ -5,11 +5,13 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
 import passport from 'passport';
+import mongoose from 'mongoose';
 
 import { connectDB, disconnectDB } from './config/db.js';
 import { assertJwtConfig, verifyAccessToken } from './config/jwt.js';
 import './config/passport.js';
 import User from './models/User.js';
+import CaseSheet from './models/CaseSheet.js';
 import authRoutes from './routes/authRoutes.js';
 import caseRoutes from './routes/caseRoutes.js';
 import kbRoutes from './routes/kbRoutes.js';
@@ -65,7 +67,6 @@ app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
-// eslint-disable-next-line no-unused-vars -- Express identifies error handlers by arity
 app.use((err, req, res, _next) => {
   const status = err.status || err.statusCode || 500;
   if (status >= 500) console.error('[api]', err);
@@ -126,8 +127,26 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('case:join', (caseId) => {
-    if (typeof caseId === 'string' && caseId) socket.join(`case:${caseId}`);
+  socket.on('case:join', async (caseId) => {
+    try {
+      if (typeof caseId !== 'string' || !mongoose.isValidObjectId(caseId)) {
+        return socket.emit('error', { message: 'Invalid case id' });
+      }
+
+      const caseSheet = await CaseSheet.findById(caseId).select('patientId');
+      const canAccessCase =
+        caseSheet &&
+        (String(caseSheet.patientId) === String(socket.user._id) ||
+          ['doctor', 'support', 'admin'].includes(socket.user.role));
+
+      if (!canAccessCase) {
+        return socket.emit('error', { message: 'Not authorized to join this case room' });
+      }
+
+      socket.join(`case:${caseId}`);
+    } catch {
+      socket.emit('error', { message: 'Unable to access this case' });
+    }
   });
 
   socket.on('case:leave', (caseId) => {

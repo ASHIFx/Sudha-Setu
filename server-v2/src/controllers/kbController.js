@@ -1,25 +1,25 @@
 import mongoose from 'mongoose';
 import KnowledgeBase, { DANGER_LEVELS } from '../models/KnowledgeBase.js';
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const listRules = async (req, res, next) => {
   try {
-    const { search, dangerLevel, active } = req.query;
+    const { search, dangerLevel } = req.query;
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
 
     const filter = {};
 
     if (search) {
-      filter.keywordTriggers = { $regex: search.trim(), $options: 'i' };
+      filter.keywordTriggers = { $regex: escapeRegex(search.trim()), $options: 'i' };
     }
 
     if (dangerLevel && DANGER_LEVELS.includes(dangerLevel)) {
       filter.dangerClassification = dangerLevel;
     }
 
-    if (active !== 'all') {
-      filter.active = active === 'false' ? false : true;
-    }
+    filter.active = true;
 
     const [rules, total] = await Promise.all([
       KnowledgeBase.find(filter)
@@ -50,7 +50,7 @@ export const getRuleById = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid rule id' });
     }
 
-    const rule = await KnowledgeBase.findById(id)
+    const rule = await KnowledgeBase.findOne({ _id: id, active: true })
       .populate('verifiedByDoctorId', 'name role');
 
     if (!rule) {

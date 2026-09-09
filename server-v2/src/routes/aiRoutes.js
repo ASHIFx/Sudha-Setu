@@ -5,7 +5,6 @@ import { protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
-// All AI routes require a valid JWT
 router.use(protect);
 
 router.post('/chat', chat);

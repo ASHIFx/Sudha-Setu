@@ -7,6 +7,7 @@ import {
   generateRefreshToken,
   verifyToken,
   setTokenCookies,
+  setAccessTokenCookie,
   clearTokenCookies,
 } from '../utils/jwt.js';
 
@@ -121,7 +122,12 @@ export const verifyOtp = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid code' });
     }
 
-    const otp = await Otp.findOne({ userId: user._id, code, purpose: 'verify_email' });
+    const otp = await Otp.findOne({
+      userId: user._id,
+      code,
+      purpose: 'verify_email',
+      expiresAt: { $gt: new Date() },
+    });
     if (!otp) {
       return res.status(400).json({ message: 'Invalid or expired code' });
     }
@@ -168,7 +174,12 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid or expired code' });
     }
 
-    const otp = await Otp.findOne({ userId: user._id, code, purpose: 'reset_password' });
+    const otp = await Otp.findOne({
+      userId: user._id,
+      code,
+      purpose: 'reset_password',
+      expiresAt: { $gt: new Date() },
+    });
     if (!otp) {
       return res.status(400).json({ message: 'Invalid or expired code' });
     }
@@ -231,7 +242,9 @@ export const login = async (req, res, next) => {
 export const logout = async (req, res, next) => {
   try {
     
-    const token = req.cookies?.refreshToken;
+    const token =
+      req.cookies?.refreshToken ||
+      (req.headers.authorization?.startsWith('Bearer ') && req.headers.authorization.slice(7).trim());
 
     if (token) {
       const hashed = hashToken(token);
@@ -274,14 +287,7 @@ export const refresh = async (req, res, next) => {
 
     const newAccessToken = generateAccessToken(user._id, user.role);
 
-    const isProd = process.env.NODE_ENV === 'production';
-    res.cookie('accessToken', newAccessToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'strict' : 'lax',
-      path: '/',
-      maxAge: 15 * 60 * 1000, 
-    });
+    setAccessTokenCookie(res, newAccessToken);
 
     res.status(200).json({ message: 'Access token refreshed' });
   } catch (err) {

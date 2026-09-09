@@ -14,6 +14,7 @@ import {
   googleCallback,
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
+import { googleAuthEnabled } from '../config/passport.js';
 
 const router = Router();
 
@@ -44,11 +45,16 @@ router.post('/logout', logout);
 router.post('/refresh', refresh);
 router.get('/me', protect, getMe);
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
-router.get(
-  '/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/login' }),
-  googleCallback
-);
+if (googleAuthEnabled) {
+  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+  router.get(
+    '/google/callback',
+    passport.authenticate('google', {
+      session: false,
+      failureRedirect: process.env.CLIENT_URL || '/',
+    }),
+    googleCallback
+  );
+}
 
 export default router;

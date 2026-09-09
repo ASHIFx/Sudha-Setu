@@ -171,8 +171,14 @@ export const prescribeCase = async (req, res, next) => {
       if (!Array.isArray(prescription)) {
         return res.status(400).json({ message: 'prescription must be an array' });
       }
+      if (prescription.some((rx) => !rx || typeof rx !== 'object' || Array.isArray(rx))) {
+        return res.status(400).json({ message: 'Each prescription item must be an object' });
+      }
+      if (prescription.some((rx) => typeof (rx.medicineName || rx.medicine) !== 'string' || !(rx.medicineName || rx.medicine).trim())) {
+        return res.status(400).json({ message: 'Each prescription item requires medicineName' });
+      }
       caseSheet.prescription = prescription.map((rx) => ({
-        medicineName: rx.medicineName || rx.medicine,
+        medicineName: (rx.medicineName || rx.medicine).trim(),
         dosage: rx.dosage,
         timing: rx.timing,
         duration: rx.duration,

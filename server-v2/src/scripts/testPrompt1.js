@@ -1,3 +1,4 @@
+import 'dotenv/config';
 
 const BASE = process.env.BASE_URL || 'http://localhost:5000';
 
@@ -12,8 +13,6 @@ let kbRuleId = '';
 
 let passed = 0;
 let failed = 0;
-
-/* ── helpers ─────────────────────────────────────────────────────── */
 
 const extractCookies = (res) => {
   const raw = res.headers.getSetCookie?.() || [];

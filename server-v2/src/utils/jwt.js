@@ -50,14 +50,18 @@ const cookieDefaults = () => {
 export const setTokenCookies = (res, accessToken, refreshToken) => {
   const defaults = cookieDefaults();
 
-  res.cookie('accessToken', accessToken, {
-    ...defaults,
-    maxAge: toMs(ACCESS_TOKEN_EXPIRES_IN),
-  });
+  setAccessTokenCookie(res, accessToken);
 
   res.cookie('refreshToken', refreshToken, {
     ...defaults,
     maxAge: toMs(REFRESH_TOKEN_EXPIRES_IN),
+  });
+};
+
+export const setAccessTokenCookie = (res, accessToken) => {
+  res.cookie('accessToken', accessToken, {
+    ...cookieDefaults(),
+    maxAge: toMs(ACCESS_TOKEN_EXPIRES_IN),
   });
 };
 
