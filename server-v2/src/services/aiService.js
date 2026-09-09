@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-2.0-flash';
+const MODEL = 'gemini-3.6-flash';
 
 const SYSTEM_INSTRUCTION =
   'You are Sudha Setu AI, a medical triage and Ayurvedic wellness assistant ' +
