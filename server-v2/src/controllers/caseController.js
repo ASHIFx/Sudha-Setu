@@ -71,6 +71,31 @@ export const intakeCase = async (req, res, next) => {
   }
 };
 
+export const getCaseQueue = async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 20));
+
+    const filter = {
+      status: { $in: ['pending_doctor', 'queued_for_doctor', 'in_consultation', 'escalated_human', 'emergency_alerted'] },
+    };
+
+    const [cases, total] = await Promise.all([
+      CaseSheet.find(filter)
+        .sort({ dangerLevel: -1, createdAt: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('patientId', 'name email phone abhaId')
+        .lean(),
+      CaseSheet.countDocuments(filter),
+    ]);
+
+    res.json({ page, limit, total, totalPages: Math.ceil(total / limit), cases });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getCaseById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -116,7 +141,7 @@ export const prescribeCase = async (req, res, next) => {
     const { status, doctorNotes, ayurvedicMarkers, prescription } = req.body ?? {};
 
     if (status !== undefined) {
-      const allowedStatuses = ['in_consultation', 'resolved_selfcare'];
+      const allowedStatuses = ['in_consultation', 'resolved_selfcare', 'completed'];
       if (!allowedStatuses.includes(status)) {
         return res.status(400).json({
           message: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}`,

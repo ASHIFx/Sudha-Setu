@@ -17,6 +17,6 @@ router.get('/:id', getRuleById);
 
 router.post('/', protect, authorize('doctor', 'admin'), requireVerifiedDoctor, createRule);
 router.put('/:id', protect, authorize('doctor', 'admin'), requireVerifiedDoctor, updateRule);
-router.delete('/:id', protect, authorize('doctor', 'admin'), deleteRule);
+router.delete('/:id', protect, authorize('doctor', 'admin'), requireVerifiedDoctor, deleteRule);
 
 export default router;
