@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,6 +9,8 @@ import { setUser } from '../../store/authSlice.js';
 export default function VerifyOtpPage() {
   const [searchParams] = useSearchParams();
   const prefillEmail = searchParams.get('email') ?? '';
+  const location = useLocation();
+  const developmentOtp = location.state?.devOtp;
 
   const [email, setEmail] = useState(prefillEmail);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -61,10 +63,15 @@ export default function VerifyOtpPage() {
     if (!email.trim()) return;
     setResending(true);
     try {
-      await api.post('/auth/forgot-password', { email: email.trim() });
-    } catch {}
-    toast.success('A new OTP has been sent if the email is valid.');
-    setResending(false);
+      const { data } = await api.post('/auth/resend-otp', { email: email.trim() });
+      toast.success(
+        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new OTP has been sent if the email is valid.'
+      );
+    } catch (err) {
+      toast.error(err.response?.data?.message ?? 'Could not resend the OTP.');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -79,6 +86,11 @@ export default function VerifyOtpPage() {
             Enter the 6-digit code sent to{' '}
             <span className="font-semibold text-slate-700">{email || 'your email'}</span>
           </p>
+          {developmentOtp && (
+            <p className="mt-2 text-sm font-semibold text-amber-700">
+              Email delivery failed locally. Development OTP: {developmentOtp}
+            </p>
+          )}
         </div>
 
         <div className="card shadow-md">

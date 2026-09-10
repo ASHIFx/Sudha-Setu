@@ -75,8 +75,13 @@ export default function DashboardPage() {
         { duration: 6000 }
       );
     },
-    'case:updated': () => {
-      fetchQueue(page);
+    'case:updated': (payload) => {
+      if (!payload?.caseId) return;
+      setCases((currentCases) => currentCases.map((caseDoc) => (
+        String(caseDoc._id) === String(payload.caseId)
+          ? { ...caseDoc, status: payload.status, assignedDoctorId: payload.assignedDoctorId }
+          : caseDoc
+      )));
     },
   });
 

@@ -86,7 +86,12 @@ app.set('io', io);
 
 io.use(async (socket, next) => {
   try {
-    const token = socket.handshake.auth?.token;
+    const cookieToken = socket.handshake.headers.cookie
+      ?.split(';')
+      .map((cookie) => cookie.trim())
+      .find((cookie) => cookie.startsWith('accessToken='))
+      ?.slice('accessToken='.length);
+    const token = socket.handshake.auth?.token || cookieToken;
     if (!token) return next(new Error('Authentication required'));
 
     const payload = verifyAccessToken(token);

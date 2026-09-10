@@ -5,6 +5,7 @@ const LEVEL_CONFIG = {
     wrapper: 'bg-green-50 border-green-200 text-green-900',
     header: 'bg-green-100 border-green-200',
     badge: 'badge-green',
+    labelColor: 'text-green-700',
     icon: <CheckCircle className="w-6 h-6 text-green-600" />,
     label: 'Low Risk — Green',
     tagline: 'Your symptoms appear mild. Follow the advice below.',
@@ -13,6 +14,7 @@ const LEVEL_CONFIG = {
     wrapper: 'bg-amber-50 border-amber-200 text-amber-900',
     header: 'bg-amber-100 border-amber-200',
     badge: 'badge-amber',
+    labelColor: 'text-amber-700',
     icon: <AlertTriangle className="w-6 h-6 text-amber-600" />,
     label: 'Medium Risk — Amber',
     tagline: 'A doctor has been alerted. You are in the OPD queue.',
@@ -21,6 +23,7 @@ const LEVEL_CONFIG = {
     wrapper: 'bg-red-50 border-red-200 text-red-900',
     header: 'bg-red-100 border-red-200',
     badge: 'badge-red',
+    labelColor: 'text-red-700',
     icon: <XCircle className="w-6 h-6 text-red-600" />,
     label: 'High Risk — Red',
     tagline: 'Emergency services have been alerted.',
@@ -36,7 +39,7 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
       <div className={`px-6 py-4 border-b ${cfg.header} flex items-center gap-3`}>
         {cfg.icon}
         <div>
-          <p className={`text-sm font-bold uppercase tracking-wider ${cfg.badge.split(' ').find(c => c.startsWith('text-'))}`}>
+          <p className={`text-sm font-bold uppercase tracking-wider ${cfg.labelColor}`}>
             {cfg.label}
           </p>
           <p className="text-sm mt-0.5">{cfg.tagline}</p>

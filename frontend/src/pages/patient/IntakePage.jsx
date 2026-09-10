@@ -97,6 +97,7 @@ export default function IntakePage() {
     setTextInput('');
     setResult(null);
     setSosActive(false);
+    locationRef.current = null;
   };
 
   return (

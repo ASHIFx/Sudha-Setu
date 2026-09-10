@@ -31,10 +31,15 @@ export const sendOtpEmail = async (toEmail, toName, code, purpose) => {
         },
       }
     );
+    return true;
   } catch (err) {
     console.warn(
-      `[emailService] Failed to send OTP email to ${toEmail}: ${err.message}`
+      `[emailService] Failed to send OTP email to ${toEmail}: ${err.response?.data?.message || err.message}`
     );
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`[emailService] Development OTP for ${toEmail}: ${code}`);
+    }
+    return false;
   }
 };
 

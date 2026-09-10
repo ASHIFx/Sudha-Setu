@@ -8,6 +8,7 @@ const api = axios.create({
 
 let isRefreshing = false;
 let failedQueue = [];
+let isRedirectingToLogin = false;
 
 const processQueue = (error) => {
   failedQueue.forEach((prom) => (error ? prom.reject(error) : prom.resolve()));
@@ -21,6 +22,7 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
+      error.response?.data?.code === 'TOKEN_EXPIRED' &&
       !original._retry &&
       !original.url?.includes('/auth/refresh') &&
       !original.url?.includes('/auth/login')
@@ -42,7 +44,10 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr);
-        window.location.href = '/login';
+        if (!isRedirectingToLogin && window.location.pathname !== '/login') {
+          isRedirectingToLogin = true;
+          window.location.replace('/login');
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const SpeechRecognitionAPI =
-  window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const getSpeechRecognitionAPI = () =>
+  typeof window === 'undefined'
+    ? null
+    : window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
 export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
   const [listening, setListening] = useState(false);
-  const [supported] = useState(() => !!SpeechRecognitionAPI);
+  const [supported] = useState(() => !!getSpeechRecognitionAPI());
   const [transcript, setTranscript] = useState('');
   const recogRef = useRef(null);
 
@@ -15,6 +17,7 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
   }, []);
 
   const start = useCallback(() => {
+    const SpeechRecognitionAPI = getSpeechRecognitionAPI();
     if (!SpeechRecognitionAPI) return;
 
     if (recogRef.current) {

@@ -2,14 +2,23 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../lib/api.js';
 import { disconnectSocket } from '../lib/socket.js';
 
-export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
-  try {
-    const { data } = await api.get('/auth/me');
-    return data.user;
-  } catch {
-    return rejectWithValue(null);
+export const fetchMe = createAsyncThunk(
+  'auth/fetchMe',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get('/auth/me');
+      return data.user;
+    } catch {
+      return rejectWithValue(null);
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { auth } = getState();
+      return !auth.initialized && !auth.loading;
+    },
   }
-});
+);
 
 export const loginUser = createAsyncThunk('auth/login', async ({ email, password }, { rejectWithValue }) => {
   try {
@@ -32,7 +41,8 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     user: null,
-    loading: true,
+    loading: false,
+    initialized: false,
   },
   reducers: {
     setUser(state, action) {
@@ -47,10 +57,12 @@ const authSlice = createSlice({
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.user = action.payload;
         state.loading = false;
+        state.initialized = true;
       })
       .addCase(fetchMe.rejected, (state) => {
         state.user = null;
         state.loading = false;
+        state.initialized = true;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.user = action.payload;

@@ -58,7 +58,8 @@ const sendOtpFor = async (user, purpose) => {
     purpose,
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   });
-  await sendOtpEmail(user.email, user.name, code, purpose);
+  const delivered = await sendOtpEmail(user.email, user.name, code, purpose);
+  return { code, delivered };
 };
 
 export const register = async (req, res, next) => {
@@ -75,9 +76,26 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail }).select('+password');
     if (existing) {
-      return res.status(400).json({ message: 'An account with this email already exists' });
+      if (existing.emailVerified) {
+        return res.status(400).json({ message: 'An account with this email already exists' });
+      }
+
+      existing.name = name.trim();
+      existing.password = password;
+      existing.abhaId = abhaId || undefined;
+      await existing.save();
+
+      const delivery = await sendOtpFor(existing, 'verify_email');
+      return res.status(200).json({
+        message: 'This account is not verified yet. A new verification code has been sent.',
+        user: { id: existing._id, email: existing.email },
+        ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
+          ? { devOtp: delivery.code }
+          : {}),
+      });
     }
 
     const user = await User.create({
@@ -88,11 +106,14 @@ export const register = async (req, res, next) => {
       role: 'patient',
     });
 
-    await sendOtpFor(user, 'verify_email');
+    const delivery = await sendOtpFor(user, 'verify_email');
 
     res.status(201).json({
       message: 'Account created. Check your email for a verification code.',
       user: { id: user._id, email: user.email },
+      ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
+        ? { devOtp: delivery.code }
+        : {}),
     });
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -156,6 +177,32 @@ export const forgotPassword = async (req, res, next) => {
 
     res.status(200).json({
       message: 'If an account with that email exists, a reset code has been sent.',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resendVerificationOtp = async (req, res, next) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email) {
+      return res.status(400).json({ message: 'email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (user && !user.emailVerified) {
+      const delivery = await sendOtpFor(user, 'verify_email');
+      return res.status(200).json({
+        message: 'A new verification code has been sent.',
+        ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
+          ? { devOtp: delivery.code }
+          : {}),
+      });
+    }
+
+    res.status(200).json({
+      message: 'If the account exists and is unverified, a new verification code has been sent.',
     });
   } catch (err) {
     next(err);

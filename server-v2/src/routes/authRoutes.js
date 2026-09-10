@@ -9,6 +9,7 @@ import {
   refresh,
   getMe,
   verifyOtp,
+  resendVerificationOtp,
   forgotPassword,
   resetPassword,
   googleCallback,
@@ -39,6 +40,7 @@ const otpLimiter = rateLimit({
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
 router.post('/verify-otp', otpLimiter, verifyOtp);
+router.post('/resend-otp', otpLimiter, resendVerificationOtp);
 router.post('/forgot-password', otpLimiter, forgotPassword);
 router.post('/reset-password', otpLimiter, resetPassword);
 router.post('/logout', logout);

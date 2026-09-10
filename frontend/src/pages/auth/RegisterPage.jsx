@@ -17,14 +17,20 @@ export default function RegisterPage() {
     if (!form.name.trim() || !form.email.trim() || !form.password) return;
     setLoading(true);
     try {
-      await api.post('/auth/register', {
+      const { data } = await api.post('/auth/register', {
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
         abhaId: form.abhaId.trim() || undefined,
       });
-      toast.success('Account created! Check your email for a verification code.');
-      navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`);
+      toast.success(
+        data.devOtp
+          ? `Email delivery failed. Development OTP: ${data.devOtp}`
+          : 'Account created! Check your email for a verification code.'
+      );
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`, {
+        state: { devOtp: data.devOtp },
+      });
     } catch (err) {
       const msg = err.response?.data?.message ?? 'Registration failed. Please try again.';
       toast.error(msg);
@@ -53,7 +59,7 @@ export default function RegisterPage() {
                 className="input text-base py-4"
                 value={form.name}
                 onChange={update('name')}
-                placeholder="Ramesh Kumar"
+                placeholder="Your name"
               />
             </div>
 
