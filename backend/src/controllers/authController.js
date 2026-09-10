@@ -59,6 +59,11 @@ const sendOtpFor = async (user, purpose) => {
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   });
   const delivered = await sendOtpEmail(user.email, user.name, code, purpose);
+  if (!delivered && process.env.NODE_ENV === 'production') {
+    const error = new Error('Verification email could not be delivered. Please try again.');
+    error.status = 503;
+    throw error;
+  }
   return { code, delivered };
 };
 
