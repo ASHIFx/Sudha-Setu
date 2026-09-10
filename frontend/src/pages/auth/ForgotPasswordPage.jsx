@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                   inputMode="numeric"
                   maxLength={6}
                   required
-                  className="input text-base py-4 text-center text-xl font-bold tracking-widest"
+                  className="input text-base py-4 text-center font-bold tracking-widest"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000"
