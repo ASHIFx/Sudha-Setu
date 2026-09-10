@@ -1,6 +1,9 @@
 import { io } from 'socket.io-client';
 
 let socket = null;
+const apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+const socketUrl = import.meta.env.VITE_SOCKET_URL ||
+  (apiBaseUrl.endsWith('/api') ? apiBaseUrl.slice(0, -4) : window.location.origin);
 
 export function getSocket(accessToken) {
   if (socket && socket.connected) return socket;
@@ -10,7 +13,7 @@ export function getSocket(accessToken) {
     socket = null;
   }
 
-  socket = io(window.location.origin, {
+  socket = io(socketUrl, {
     withCredentials: true,
     auth: accessToken ? { token: accessToken } : {},
     transports: ['websocket', 'polling'],
