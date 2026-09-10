@@ -139,6 +139,58 @@ const run = async () => {
     assert(!!caseId, `caseId returned: ${caseId}`);
   }
 
+  console.log('\n[1a] GET /cases/:id — AI extraction populated symptoms and markers');
+  {
+    const res = await fetch(`${BASE}/api/cases/${caseId}`, {
+      headers: { Cookie: patientCookies },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `GET case 200 (${res.status})`);
+    assert(
+      Array.isArray(body.case?.symptoms),
+      `symptoms field is an array (AI extraction ran; got ${body.case?.symptoms?.length ?? 'n/a'} items)`
+    );
+    assert(
+      typeof body.case?.ayurvedicMarkers?.suspectedPrakriti === 'string' &&
+        body.case.ayurvedicMarkers.suspectedPrakriti !== '',
+      `suspectedPrakriti present: ${body.case?.ayurvedicMarkers?.suspectedPrakriti}`
+    );
+    assert(
+      typeof body.case?.ayurvedicMarkers?.agniStatus === 'string' &&
+        body.case.ayurvedicMarkers.agniStatus !== '',
+      `agniStatus present: ${body.case?.ayurvedicMarkers?.agniStatus}`
+    );
+  }
+
+  console.log('\n[1b] POST /cases/intake — extractor failure does not block intake');
+  {
+    const res = await json('POST', `${BASE}/api/cases/intake`, {
+      patientText: 'chest pain radiating to left arm since an hour',
+      ayurvedicMarkers: { suspectedPrakriti: 'pitta' },
+    }, patientCookies);
+    const body = await res.json();
+    assert(
+      res.status === 201,
+      `Intake still 201 even if extractor were to fail (${res.status})`
+    );
+    assert(
+      typeof body.dangerLevel === 'string' && ['low', 'medium', 'high'].includes(body.dangerLevel),
+      `dangerLevel valid: ${body.dangerLevel}`
+    );
+    assert(
+      typeof body.caseId === 'string' && body.caseId.length > 0,
+      `caseId returned: ${body.caseId}`
+    );
+    const getRes = await fetch(`${BASE}/api/cases/${body.caseId}`, {
+      headers: { Cookie: patientCookies },
+    });
+    const getBody = await getRes.json();
+    assert(
+      getBody.case?.ayurvedicMarkers?.suspectedPrakriti === 'pitta',
+      `Client-supplied marker not overwritten by AI: ${getBody.case?.ayurvedicMarkers?.suspectedPrakriti}`
+    );
+  }
+
   console.log('\n[2] PATCH /cases/:id — patient → 403');
   {
     const res = await json('PATCH', `${BASE}/api/cases/${caseId}`, {

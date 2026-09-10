@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import CaseSheet from '../models/CaseSheet.js';
 import { analyzeSymptoms, statusForAssessment } from '../services/triageEngine.js';
 import { generateCaseSheetPDF } from '../services/pdfService.js';
+import { extractIntakeData } from '../services/intakeExtractor.js';
 
 const MAX_TEXT_LENGTH = 5000;
 
@@ -26,6 +27,26 @@ export const intakeCase = async (req, res, next) => {
         .json({ message: `patientText must be ${MAX_TEXT_LENGTH} characters or fewer` });
     }
 
+    let aiSymptoms = [];
+    let aiMarkers = {};
+
+    try {
+      const extracted = await extractIntakeData(patientText);
+      aiSymptoms = extracted.symptoms;
+      aiMarkers = extracted.ayurvedicMarkers;
+    } catch (extractErr) {
+      console.error('[intake] AI extraction failed, continuing without it:', extractErr.message);
+    }
+
+    const resolvedSymptoms = Array.isArray(symptoms) && symptoms.length > 0
+      ? symptoms
+      : aiSymptoms;
+
+    const resolvedMarkers = {
+      ...aiMarkers,
+      ...(ayurvedicMarkers ?? {}),
+    };
+
     const assessment = await analyzeSymptoms(patientText);
     const status = statusForAssessment(assessment);
 
@@ -33,8 +54,8 @@ export const intakeCase = async (req, res, next) => {
       patientId: req.user._id,
       languageUsed: languageUsed || req.user.languagePreference || 'auto',
       rawDialogue: [{ sender: 'patient', message: patientText.trim() }],
-      symptoms: Array.isArray(symptoms) ? symptoms : [],
-      ayurvedicMarkers: ayurvedicMarkers ?? {},
+      symptoms: resolvedSymptoms,
+      ayurvedicMarkers: resolvedMarkers,
       dangerLevel: assessment.dangerLevel,
       confidenceScore: assessment.confidenceScore,
       status,
