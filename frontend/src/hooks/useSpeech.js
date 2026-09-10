@@ -10,6 +10,7 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
   const [supported] = useState(() => !!getSpeechRecognitionAPI());
   const [transcript, setTranscript] = useState('');
   const recogRef = useRef(null);
+  const finalTranscriptRef = useRef('');
 
   const stop = useCallback(() => {
     recogRef.current?.stop();
@@ -24,6 +25,8 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
       recogRef.current.abort();
     }
 
+    finalTranscriptRef.current = '';
+
     const recog = new SpeechRecognitionAPI();
     recog.lang = lang;
     recog.interimResults = true;
@@ -35,21 +38,17 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
 
     recog.onresult = (event) => {
       let interim = '';
-      let final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          final += t;
+          finalTranscriptRef.current += t + ' ';
         } else {
           interim += t;
         }
       }
-      const combined = final || interim;
-      setTranscript((prev) => {
-        const updated = (prev + ' ' + combined).trim();
-        onResult?.(updated);
-        return updated;
-      });
+      const display = (finalTranscriptRef.current + interim).trim();
+      setTranscript(display);
+      onResult?.(display);
     };
 
     recog.onerror = (e) => {
@@ -68,6 +67,7 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
 
   const reset = useCallback(() => {
     stop();
+    finalTranscriptRef.current = '';
     setTranscript('');
   }, [stop]);
 
