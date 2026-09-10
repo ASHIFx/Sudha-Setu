@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 
 import { connectDB, disconnectDB } from './config/db.js';
 import { assertJwtConfig, verifyAccessToken } from './config/jwt.js';
+import { startKeepAlive } from './config/cron.js';
 import './config/passport.js';
 import User from './models/User.js';
 import CaseSheet from './models/CaseSheet.js';
@@ -172,6 +173,7 @@ const start = async () => {
     await connectDB();
     server.listen(PORT, () => {
       console.log(`[api] Sudha Setu listening on :${PORT} (${NODE_ENV})`);
+      startKeepAlive();
     });
   } catch (err) {
     console.error('[api] startup failed:', err.message);
