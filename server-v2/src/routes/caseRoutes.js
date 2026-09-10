@@ -2,7 +2,6 @@ import { Router } from 'express';
 
 import {
   intakeCase,
-  getCaseQueue,
   getCaseById,
   prescribeCase,
   getCasePDF,
@@ -13,8 +12,6 @@ import { requireVerifiedDoctor } from '../middlewares/roleMiddleware.js';
 const router = Router();
 
 router.use(protect);
-
-router.get('/queue', authorize('doctor', 'admin'), getCaseQueue);
 
 router.post('/intake', authorize('patient'), intakeCase);
 
