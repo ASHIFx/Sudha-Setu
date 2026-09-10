@@ -42,7 +42,7 @@ const cookieDefaults = () => {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    sameSite: process.env.COOKIE_SAME_SITE || (isProd ? 'strict' : 'lax'),
     path: '/',
   };
 };
