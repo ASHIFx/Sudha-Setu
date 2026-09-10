@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://sudha-setu.onrender.com/api/:path*"
+    }
+  ]
+}
