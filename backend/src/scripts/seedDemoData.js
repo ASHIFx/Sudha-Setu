@@ -196,6 +196,7 @@ const DEMO_ADMIN = {
 
 export const seedDemo = async () => {
   try {
+    if (process.env.NODE_ENV === 'production') throw new Error('Demo seeds are disabled in production');
     await connectDB();
     console.log('\n🚀 Starting Sudha Setu Demo Data Seeding...\n');
 
@@ -208,13 +209,15 @@ export const seedDemo = async () => {
 
     const existingUsers = await User.find({ email: { $in: demoEmails } });
     const existingUserIds = existingUsers.map((u) => u._id);
+    const existingCaseIds = await CaseSheet.find({ patientId: { $in: existingUserIds } }).distinct('_id');
+    const existingAmbulanceIds = await Ambulance.find({ userId: { $in: existingUserIds } }).distinct('_id');
 
     if (existingUserIds.length > 0) {
       await Promise.all([
         Doctor.deleteMany({ userId: { $in: existingUserIds } }),
         Ambulance.deleteMany({ userId: { $in: existingUserIds } }),
         CaseSheet.deleteMany({ patientId: { $in: existingUserIds } }),
-        Dispatch.deleteMany({ ambulanceId: { $in: existingUserIds } }),
+        Dispatch.deleteMany({ $or: [{ caseId: { $in: existingCaseIds } }, { ambulanceId: { $in: existingAmbulanceIds } }] }),
         User.deleteMany({ _id: { $in: existingUserIds } }),
       ]);
       console.log('🧹 Cleaned existing demo users and associated records.');

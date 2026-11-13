@@ -217,10 +217,10 @@ export const resetPassword = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid or expired code' });
     }
 
-    await Otp.deleteOne({ _id: otp._id });
     user.password = newPassword;
     user.refreshToken = null;
     await user.save();
+    await Otp.deleteOne({ _id: otp._id });
 
     res.status(200).json({ message: 'Password reset. Please log in with your new password.' });
   } catch (err) {
@@ -299,6 +299,7 @@ export const refresh = async (req, res, next) => {
     let payload;
     try {
       payload = verifyToken(token);
+      if (payload.tokenType !== 'refresh') throw new Error('Invalid refresh token');
     } catch {
       return res.status(401).json({ message: 'Invalid or expired refresh token' });
     }

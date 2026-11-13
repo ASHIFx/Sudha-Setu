@@ -16,14 +16,14 @@ const TIER_META = {
   },
   high: {
     title: 'Emergency Care Needed (Urgent)',
-    subtitle: 'Urgent markers detected. Emergency hospital identified and ambulance fleet dispatch alerted.',
+    subtitle: 'Urgent symptoms detected. Call emergency services now and check the dispatch request status.',
     headerClass: 'bg-rose-950/50 border-b border-rose-500/30 text-rose-300',
     badgeClass: 'badge-red',
   },
 };
 
 export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanReview, status, caseId, lang = 'hi-IN' }) {
-  const meta = TIER_META[dangerLevel] ?? TIER_META.low;
+  const meta = requiresHumanReview && dangerLevel === 'low' ? TIER_META.medium : TIER_META[dangerLevel] ?? TIER_META.medium;
   const advice = verifiedAdvice ?? {};
   const { speak, stopSpeaking, speaking, ttsSupported } = useSpeech({ lang });
 
@@ -78,7 +78,7 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
       <div className="p-5 space-y-4 text-xs">
         {requiresHumanReview && (
           <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 font-medium">
-            Doctor Notice: A doctor has been notified and will review your symptoms for personalized follow-up.
+            Your case is in the doctor review queue. A review time has not been confirmed.
           </div>
         )}
 

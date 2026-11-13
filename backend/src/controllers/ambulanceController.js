@@ -5,10 +5,7 @@ import CaseSheet from '../models/CaseSheet.js';
 import Hospital from '../models/Hospital.js';
 
 export const findNearestHospital = async (location) => {
-  let hospitals = await Hospital.find({ emergencyCapable: true });
-  if (!hospitals || hospitals.length === 0) {
-    hospitals = await Hospital.find();
-  }
+  const hospitals = await Hospital.find({ emergencyCapable: true });
 
   if (!hospitals || hospitals.length === 0) {
     return null;
@@ -74,48 +71,59 @@ export const createDispatch = async (req, res, next) => {
       return res.status(404).json({ message: 'CaseSheet not found' });
     }
 
+    if (req.user.role === 'patient' && String(caseSheet.patientId) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'You can only request dispatch for your own case' });
+    }
+    if (req.user.role === 'patient' && ambulanceId) {
+      return res.status(400).json({ message: 'Ambulance assignment is managed by the dispatch service' });
+    }
+
     if (caseSheet.dangerLevel !== 'high') {
       return res.status(400).json({
         message: `Ambulance dispatch requires dangerLevel "high" (current: "${caseSheet.dangerLevel}")`,
       });
     }
 
-    let ambulance = null;
-    if (ambulanceId) {
-      if (!mongoose.isValidObjectId(ambulanceId)) {
-        return res.status(400).json({ message: 'Invalid ambulanceId' });
-      }
-      ambulance = await Ambulance.findById(ambulanceId);
-      if (!ambulance) {
-        return res.status(404).json({ message: 'Specified ambulance not found' });
-      }
-    } else {
-      ambulance = await Ambulance.findOne({ status: 'available' });
-      if (!ambulance) {
-        ambulance = await Ambulance.findOne();
-      }
+    const existing = await Dispatch.findOne({ caseId, status: { $in: ['dispatched', 'accepted'] } });
+    if (existing) {
+      const [ambulance, hospital] = await Promise.all([
+        Ambulance.findById(existing.ambulanceId),
+        existing.hospitalId ? Hospital.findById(existing.hospitalId) : null,
+      ]);
+      return res.json({ dispatch: existing, ambulance, hospital });
     }
 
+    if (ambulanceId && !mongoose.isValidObjectId(ambulanceId)) {
+      return res.status(400).json({ message: 'Invalid ambulanceId' });
+    }
+    const nearestHospital = await findNearestHospital(caseSheet.location);
+    const ambulance = await Ambulance.findOneAndUpdate(
+      { status: 'available', ...(ambulanceId ? { _id: ambulanceId } : {}) },
+      { $set: { status: 'dispatched' } },
+      { new: true }
+    );
     if (!ambulance) {
-      return res.status(404).json({
-        message: 'No ambulance units are registered in the system to dispatch',
+      return res.status(409).json({
+        message: 'No available ambulance unit. Call emergency services directly.',
       });
     }
 
-    const nearestHospital = await findNearestHospital(caseSheet.location);
-
-    const dispatch = await Dispatch.create({
-      caseId: caseSheet._id,
-      ambulanceId: ambulance._id,
-      hospitalId: nearestHospital?._id ?? null,
-      patientLocation: caseSheet.location,
-      dangerLevel: caseSheet.dangerLevel,
-      status: 'dispatched',
-      notes: notes || 'Emergency dispatch requested for high-risk triage case',
-    });
-
-    ambulance.status = 'dispatched';
-    await ambulance.save();
+    let dispatch;
+    try {
+      dispatch = await Dispatch.create({
+        caseId: caseSheet._id,
+        ambulanceId: ambulance._id,
+        hospitalId: nearestHospital?._id ?? null,
+        patientLocation: caseSheet.location,
+        dangerLevel: caseSheet.dangerLevel,
+        status: 'dispatched',
+        notes: notes || 'Emergency dispatch requested for high-risk triage case',
+      });
+    } catch (err) {
+      await Ambulance.updateOne({ _id: ambulance._id, status: 'dispatched' }, { $set: { status: 'available' } });
+      if (err.code === 11000) return res.status(409).json({ message: 'This case already has an active dispatch. Refresh to see it.' });
+      throw err;
+    }
 
     caseSheet.status = 'emergency_alerted';
     await caseSheet.save();
@@ -142,7 +150,7 @@ export const createDispatch = async (req, res, next) => {
       },
     };
 
-    io?.to('ambulance').emit('ambulance:new-dispatch', newDispatchPayload);
+    io?.to('ambulance').to(`user:${ambulance.userId}`).emit('ambulance:new-dispatch', newDispatchPayload);
 
     io?.to('doctors').emit('case:updated', {
       caseId: caseSheet._id,
@@ -179,9 +187,8 @@ export const listDispatches = async (req, res, next) => {
 
     if (req.user.role === 'ambulance') {
       const myProfile = await Ambulance.findOne({ userId: req.user._id });
-      if (myProfile) {
-        filter.$or = [{ ambulanceId: myProfile._id }, { status: 'dispatched' }];
-      }
+      if (!myProfile) return res.status(403).json({ message: 'No ambulance profile found for this account' });
+      filter.ambulanceId = myProfile._id;
     }
 
     const dispatches = await Dispatch.find(filter)
@@ -219,12 +226,30 @@ export const updateDispatchStatus = async (req, res, next) => {
       return res.status(404).json({ message: 'Dispatch record not found' });
     }
 
-    dispatch.status = status;
+    if (req.user.role === 'ambulance') {
+      const profile = await Ambulance.findOne({ userId: req.user._id });
+      if (!profile || String(profile._id) !== String(dispatch.ambulanceId)) {
+        return res.status(403).json({ message: 'This dispatch is assigned to another crew' });
+      }
+    }
+    const transitions = { dispatched: ['accepted', 'cancelled'], accepted: ['completed', 'cancelled'] };
+    if (!transitions[dispatch.status]?.includes(status)) {
+      return res.status(409).json({ message: `Cannot change ${dispatch.status} dispatch to ${status}` });
+    }
+    const previousStatus = dispatch.status;
+    const updated = await Dispatch.findOneAndUpdate(
+      { _id: id, status: previousStatus },
+      { $set: { status, ...(notes ? { notes } : {}) } },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(409).json({ message: 'Dispatch changed. Refresh before trying again.' });
+    dispatch.status = updated.status;
+    dispatch.updatedAt = updated.updatedAt;
     if (notes) dispatch.notes = notes;
-    await dispatch.save();
 
+    let ambulance;
     if (dispatch.ambulanceId) {
-      const ambulance = await Ambulance.findById(dispatch.ambulanceId);
+      ambulance = await Ambulance.findById(dispatch.ambulanceId);
       if (ambulance) {
         if (status === 'completed' || status === 'cancelled') {
           ambulance.status = 'available';
@@ -244,7 +269,7 @@ export const updateDispatchStatus = async (req, res, next) => {
       updatedAt: dispatch.updatedAt,
     };
 
-    io?.to('ambulance').emit('ambulance:status-update', statusUpdatePayload);
+    io?.to('ambulance').to(`user:${ambulance?.userId}`).emit('ambulance:status-update', statusUpdatePayload);
 
     res.json({ dispatch });
   } catch (err) {

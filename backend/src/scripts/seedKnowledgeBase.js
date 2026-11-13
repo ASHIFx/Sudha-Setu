@@ -391,50 +391,27 @@ const buildRules = (doctorId) => [
 ];
 
 const seed = async () => {
+  if (process.env.NODE_ENV === 'production') throw new Error('Demo seeds are disabled in production');
   await connectDB();
 
-  console.log("[seed] Cleaning up old data...");
-  console.log("[seed] Cleaning up old data...");
+  console.log("[seed] Adding missing demo records; existing records are preserved.");
 
-  const allSeedEmails = [
-    SEED_DOCTOR.email,
-    SEED_ADMIN.email,
-    ...PROTOTYPE_USERS.map((u) => u.email),
-  ];
-
-  const allSeedMedRegNumbers = [
-    SEED_DOCTOR_PROFILE.medicalRegistrationNumber,
-    ...PROTOTYPE_DOCTOR_PROFILES.map(
-      (dp) => dp.profile.medicalRegistrationNumber,
-    ),
-  ];
-
-  await Doctor.deleteMany({
-    medicalRegistrationNumber: { $in: allSeedMedRegNumbers },
-  });
-
-  await User.deleteMany({ email: { $in: allSeedEmails } });
-
-  await CaseSheet.deleteMany({});
-  await KnowledgeBase.deleteMany({});
-
-  console.log("[seed] Database wiped. Seeding fresh data...");
-
-  const doctor = await User.create(SEED_DOCTOR);
+  const ensureUser = async (data) => (await User.findOne({ email: data.email })) || User.create(data);
+  const doctor = await ensureUser(SEED_DOCTOR);
   console.log(
     `[seed] created verifying doctor ${doctor.name} (${doctor.email})`,
   );
 
-  await Doctor.create({ userId: doctor._id, ...SEED_DOCTOR_PROFILE });
+  if (!await Doctor.exists({ userId: doctor._id })) await Doctor.create({ userId: doctor._id, ...SEED_DOCTOR_PROFILE });
   console.log("[seed] created doctor profile for the seed verifier");
 
-  const admin = await User.create(SEED_ADMIN);
+  const admin = await ensureUser(SEED_ADMIN);
   console.log(`[seed] created bootstrap admin ${admin.email}`);
 
   console.log("[seed] Seeding prototype users...");
   const userMap = {};
   for (const u of PROTOTYPE_USERS) {
-    const user = await User.create(u);
+    const user = await ensureUser(u);
     console.log(`[seed] created dummy user: ${u.name} (${u.role})`);
     userMap[u.email] = user;
   }
@@ -442,13 +419,17 @@ const seed = async () => {
   console.log("[seed] Seeding prototype doctor profiles...");
   for (const dp of PROTOTYPE_DOCTOR_PROFILES) {
     const docUser = userMap[dp.email];
-    if (docUser) {
+    if (docUser && !await Doctor.exists({ userId: docUser._id })) {
       await Doctor.create({ userId: docUser._id, ...dp.profile });
     }
   }
 
   const rules = buildRules(doctor._id);
-  const inserted = await KnowledgeBase.create(rules);
+  const inserted = [];
+  for (const rule of rules) {
+    const existing = await KnowledgeBase.findOne({ keywordTriggers: rule.keywordTriggers });
+    inserted.push(existing || await KnowledgeBase.create(rule));
+  }
 
   const byLevel = inserted.reduce((acc, r) => {
     acc[r.dangerClassification] = (acc[r.dangerClassification] ?? 0) + 1;
@@ -511,7 +492,17 @@ const seed = async () => {
     },
   ];
 
-  await CaseSheet.create(caseSheets);
+  for (const sample of caseSheets) {
+    if (!await CaseSheet.exists({ patientId: sample.patientId })) {
+      await CaseSheet.create({
+        ...sample,
+        assignedDoctorId: sample.doctorId || (sample.prescriptions?.length ? doctor._id : null),
+        prescription: sample.prescriptions || [],
+        doctorNotes: sample.notes,
+        rawDialogue: [{ sender: 'patient', message: sample.chiefComplaint }],
+      });
+    }
+  }
   console.log(
     `[seed] Created ${caseSheets.length} prototype case sheets for testing.`,
   );

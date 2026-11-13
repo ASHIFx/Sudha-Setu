@@ -1,4 +1,23 @@
-﻿export const extractIntakeData = async (patientText) => {
+export const normalizeIntakeData = (data) => {
+  const markers = data?.ayurvedicMarkers || {};
+  return {
+    symptoms: Array.isArray(data?.symptoms) ? data.symptoms
+      .filter((s) => s && typeof s.name === 'string' && s.name.trim())
+      .map((s) => ({
+        name: s.name.trim(),
+        ...(typeof s.duration === 'string' ? { duration: s.duration } : {}),
+        ...(Number.isFinite(s.severity) && s.severity >= 1 && s.severity <= 10 ? { severity: s.severity } : {}),
+      })) : [],
+    ayurvedicMarkers: {
+      suspectedPrakriti: ['vata', 'pitta', 'kapha', 'vata-pitta', 'pitta-kapha', 'vata-kapha', 'tridosha'].includes(markers.suspectedPrakriti) ? markers.suspectedPrakriti : 'unknown',
+      agniStatus: ['sama', 'vishama', 'tikshna', 'manda'].includes(markers.agniStatus) ? markers.agniStatus : 'unknown',
+      ...(typeof markers.dietHabits === 'string' ? { dietHabits: markers.dietHabits } : {}),
+      ...(typeof markers.sleepPattern === 'string' ? { sleepPattern: markers.sleepPattern } : {}),
+    },
+  };
+};
+
+export const extractIntakeData = async (patientText) => {
   const text = String(patientText || '').trim();
   if (!text) {
     return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };

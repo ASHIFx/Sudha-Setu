@@ -27,7 +27,7 @@ export const intakeCase = async (req, res, next) => {
         .json({ message: `patientText must be ${MAX_TEXT_LENGTH} characters or fewer` });
     }
 
-    const assessment = await analyzeSymptoms(patientText, languageUsed);
+    const assessment = await analyzeSymptoms(patientText, languageUsed || req.user.languagePreference);
     const status = statusForAssessment(assessment);
 
     let resolvedSymptoms = Array.isArray(symptoms) && symptoms.length > 0 ? symptoms : [];

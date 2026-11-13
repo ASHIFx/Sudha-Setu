@@ -4,6 +4,9 @@
   "description": "Sudha Setu - Voice-enabled Clinical Health Triage & Fleet Orchestration Platform",
   "private": true,
   "scripts": {
+    "setup": "npm --prefix backend ci && npm --prefix frontend ci",
+    "test": "npm --prefix backend test",
+    "start": "npm --prefix backend start",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev": "node -e \"const { spawn } = require('child_process'); const b = spawn('npm', ['--prefix', 'backend', 'run', 'dev'], { stdio: 'inherit', shell: true }); const f = spawn('npm', ['--prefix', 'frontend', 'run', 'dev'], { stdio: 'inherit', shell: true }); process.on('SIGINT', () => { b.kill(); f.kill(); process.exit(); });\"",

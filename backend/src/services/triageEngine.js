@@ -34,10 +34,24 @@ const isGibberishText = (str = '') => {
 };
 
 const NEGATIONS = ['no', 'not', 'never', 'without', 'denies', 'nahi', 'nahin', 'नहीं', 'नही'];
-
 const hasNegation = (text, idx) => {
-  const prefix = text.slice(Math.max(0, idx - 30), idx).toLowerCase();
-  return NEGATIONS.some((n) => prefix.includes(n));
+  const prefix = text.slice(0, idx).split(/[.!?;,।]|\b(?:but|however|and)\b/i).at(-1);
+  return /(?:\b(?:no|not|never|without|denies|nahi|nahin)\b|नहीं|नही)\s+(?:\S+\s+){0,2}$/iu.test(prefix);
+};
+
+const hasPositiveKeyword = (text, keyword) => {
+  if (!keyword) return false;
+  let start = 0;
+  while (start < text.length) {
+    const index = text.indexOf(keyword, start);
+    if (index < 0) return false;
+    const before = text[index - 1] || '';
+    const after = text[index + keyword.length] || '';
+    const wholeWord = !/[a-z0-9]/i.test(keyword[0]) || (!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after));
+    if (wholeWord && !hasNegation(text, index)) return true;
+    start = index + keyword.length;
+  }
+  return false;
 };
 
 const GREETING_RESPONSES = {
@@ -118,15 +132,6 @@ const GREETING_RESPONSES = {
   },
 };
 
-const defaultSelfCareAdvice = (lang = 'en') => {
-  const selected = GREETING_RESPONSES[lang] || GREETING_RESPONSES.en;
-  return {
-    generalTips: selected.generalTips,
-    ayurvedicDietaryNotes: selected.ayurvedicDietaryNotes,
-    safeRemedies: selected.safeRemedies,
-  };
-};
-
 export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   const text = String(patientText || '').trim();
   const normalizedLang = ['hi', 'bn', 'mr', 'ta'].includes(languageUsed?.toLowerCase()) ? languageUsed.toLowerCase() : 'en';
@@ -191,6 +196,19 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   const ragRules = await retrieveRelevantKnowledge(text, 4).catch(() => []);
 
   const lowerText = text.toLowerCase();
+  const emergencyKeywords = ['chest pain', 'heart attack', 'unconscious', 'cannot breathe', 'heavy bleeding', 'stroke', 'seizure'];
+  if (emergencyKeywords.some((keyword) => hasPositiveKeyword(lowerText, keyword))) {
+    return {
+      dangerLevel: 'high',
+      confidenceScore: 0.95,
+      requiresHumanReview: true,
+      verifiedAdvice: defaultSelfCareAdvice(normalizedLang),
+      matchedKeywords: [emergencyKeywords.find((k) => hasPositiveKeyword(lowerText, k))],
+      matchedRuleIds: [],
+      reason: 'emergency_guard',
+    };
+  }
+
   const rules = mongoose.connection.readyState === 1
     ? await KnowledgeBase.find({ active: true }).lean().catch(() => [])
     : [];
@@ -200,8 +218,7 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     const hits = [];
     for (const keyword of rule.keywordTriggers || []) {
       const kw = keyword.toLowerCase().trim();
-      const idx = lowerText.indexOf(kw);
-      if (idx !== -1 && !hasNegation(lowerText, idx)) {
+      if (hasPositiveKeyword(lowerText, kw)) {
         hits.push(keyword);
       }
     }
@@ -346,9 +363,10 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   };
 };
 
-export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice, isGreeting, isGibberish }) => {
+export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice, isGreeting, isGibberish, requiresHumanReview }) => {
   if (isGreeting || isGibberish) return 'resolved_selfcare';
   if (dangerLevel === 'high') return 'emergency_alerted';
+  if (requiresHumanReview) return 'pending_doctor';
   if (dangerLevel === 'medium') return 'pending_doctor';
   if (confidenceScore >= LOW_CONFIDENCE_THRESHOLD && verifiedAdvice) {
     return 'resolved_selfcare';

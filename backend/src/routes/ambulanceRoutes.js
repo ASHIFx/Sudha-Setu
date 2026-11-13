@@ -15,7 +15,7 @@ const router = Router();
 router.use(protect);
 
 router.get('/me/profile', isAmbulance, getMyAmbulanceProfile);
-router.post('/dispatch', authorize('doctor', 'admin', 'ambulance', 'support'), createDispatch);
+router.post('/dispatch', authorize('patient', 'doctor', 'admin', 'support'), createDispatch);
 router.get('/dispatches', authorize('ambulance', 'admin', 'doctor', 'support'), listDispatches);
 router.patch('/dispatches/:id/status', authorize('ambulance', 'admin'), updateDispatchStatus);
 router.get('/available', authorize('ambulance', 'admin', 'doctor', 'support'), listAvailableAmbulances);

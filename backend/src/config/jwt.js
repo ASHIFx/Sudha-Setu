@@ -18,10 +18,13 @@ export const assertJwtConfig = () => {
 };
 
 export const signAccessToken = ({ id, role }) =>
-  jwt.sign({ sub: String(id), role }, getSecret(), {
+  jwt.sign({ sub: String(id), role, tokenType: 'access' }, getSecret(), {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || process.env.JWT_EXPIRES_IN || DEFAULT_EXPIRES_IN,
     issuer: 'sudha-setu',
   });
 
-export const verifyAccessToken = (token) =>
-  jwt.verify(token, getSecret(), { issuer: 'sudha-setu' });
+export const verifyAccessToken = (token) => {
+  const payload = jwt.verify(token, getSecret(), { issuer: 'sudha-setu', algorithms: ['HS256'] });
+  if (payload.tokenType !== 'access' || !payload.sub) throw new Error('Invalid access token');
+  return payload;
+};

@@ -14,8 +14,10 @@ import {
   resetPassword,
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
+import { validateAuthInput } from '../middlewares/authInput.js';
 
 const router = Router();
+router.use(validateAuthInput);
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 

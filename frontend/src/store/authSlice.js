@@ -96,6 +96,11 @@ const authSlice = createSlice({
         state.user = null;
         state.initialized = true;
         storeUser(null);
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        state.user = null;
+        state.initialized = true;
+        storeUser(null);
       });
   },
 });
