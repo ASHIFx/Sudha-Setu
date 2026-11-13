@@ -11,7 +11,7 @@
   }
 
   body {
-    @apply bg-[#0B0F19] text-slate-100 min-h-screen selection:bg-emerald-500/30 selection:text-emerald-200;
+    @apply bg-[#04150E] text-slate-100 min-h-screen selection:bg-emerald-500/30 selection:text-emerald-200;
   }
 
   *:focus-visible {

@@ -20,6 +20,9 @@ export default {
       boxShadow: {
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
       },
+      fontFamily: {
+        serif: ['"Playfair Display"', 'Lora', 'Georgia', 'serif'],
+      },
     },
   },
   plugins: [],
