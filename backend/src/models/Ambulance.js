@@ -23,6 +23,12 @@ const ambulanceSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ['available', 'dispatched', 'busy', 'offline'],
+      default: 'available',
+      index: true,
+    },
   },
   { timestamps: true }
 );

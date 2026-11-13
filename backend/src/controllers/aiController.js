@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Chat from '../models/Chat.js';
 import CaseSheet from '../models/CaseSheet.js';
 import { sendChatMessage } from '../services/aiService.js';
+import { retrieveRelevantKnowledge } from '../services/ragService.js';
 
 const FALLBACK_REPLY =
   'I\'m sorry, the AI assistant is currently unavailable. Please try again later ' +
@@ -63,14 +64,34 @@ export const chat = async (req, res, next) => {
 
     const priorMessages = chatDoc.messages.slice(0, -1);
 
-    let replyText = FALLBACK_REPLY;
+    // Step 1: RAG Retrieval - Fetch relevant KnowledgeBase entries
+    let retrievedRules = [];
     try {
-      replyText = await sendChatMessage(priorMessages, message.trim());
+      retrievedRules = await retrieveRelevantKnowledge(message.trim(), 3);
+    } catch (ragErr) {
+      console.warn('[aiController] RAG retrieval error:', ragErr.message);
+    }
+
+    // Step 2: Grounded Gemini generation with citations
+    let replyText = FALLBACK_REPLY;
+    let citedRules = [];
+
+    try {
+      const aiResult = await sendChatMessage(priorMessages, message.trim(), {
+        retrievedRules,
+      });
+      replyText = aiResult.text;
+      citedRules = aiResult.citedRules || [];
     } catch (aiErr) {
       console.warn('[aiController] Gemini call failed:', aiErr.message);
     }
 
-    const aiMsg = { sender: 'ai', content: replyText, timestamp: new Date() };
+    const aiMsg = {
+      sender: 'ai',
+      content: replyText,
+      timestamp: new Date(),
+      citations: citedRules,
+    };
     chatDoc.messages.push(aiMsg);
     await chatDoc.save();
 
@@ -78,6 +99,12 @@ export const chat = async (req, res, next) => {
       reply: replyText,
       chatId: String(chatDoc._id),
       messageCount: chatDoc.messages.length,
+      citations: citedRules,
+      grounding: retrievedRules.map((r) => ({
+        _id: r._id,
+        keywordTriggers: r.keywordTriggers,
+        relevanceScore: r.relevanceScore,
+      })),
     });
   } catch (err) {
     next(err);
@@ -92,7 +119,10 @@ export const getChatHistory = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid chatId' });
     }
 
-    const chatDoc = await Chat.findOne({ _id: chatId, userId: req.user._id });
+    const chatDoc = await Chat.findOne({ _id: chatId, userId: req.user._id }).populate(
+      'messages.citations',
+      'keywordTriggers dangerClassification verifiedAdvice'
+    );
     if (!chatDoc) {
       return res.status(404).json({ message: 'Chat session not found' });
     }

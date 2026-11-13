@@ -28,6 +28,41 @@ export default function Navbar() {
         <nav className="flex items-center gap-3">
           {user ? (
             <>
+              <div className="flex items-center gap-2">
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="btn-ghost px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg"
+                  >
+                    Admin Hub
+                  </Link>
+                )}
+                {user.role === 'ambulance' && (
+                  <Link
+                    to="/ambulance/dashboard"
+                    className="btn-ghost px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg"
+                  >
+                    Ambulance Hub
+                  </Link>
+                )}
+                {['doctor', 'support'].includes(user.role) && (
+                  <Link
+                    to="/doctor/dashboard"
+                    className="btn-ghost px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg"
+                  >
+                    Doctor Console
+                  </Link>
+                )}
+                {user.role === 'patient' && (
+                  <Link
+                    to="/intake"
+                    className="btn-ghost px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg"
+                  >
+                    New Intake
+                  </Link>
+                )}
+              </div>
+
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100">
                 <User className="w-4 h-4 text-slate-500" />
                 <span className="text-sm font-medium text-slate-700">{user.name}</span>

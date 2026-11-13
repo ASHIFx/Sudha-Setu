@@ -36,7 +36,14 @@ function MicButton({ listening, onClick, disabled }) {
 
 export default function IntakePage() {
   const user = useSelector((s) => s.auth.user);
-  const [lang, setLang] = useState('hi-IN');
+  
+  // Initialize language from user preference or default to Hindi
+  const [lang, setLang] = useState(() => {
+    const pref = user?.languagePreference?.toLowerCase();
+    if (pref === 'en' || pref === 'en-in') return 'en-IN';
+    return 'hi-IN';
+  });
+
   const [textInput, setTextInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
@@ -201,6 +208,7 @@ export default function IntakePage() {
               requiresHumanReview={result.requiresHumanReview}
               status={result.status}
               caseId={result.caseId}
+              lang={lang}
             />
             <button onClick={handleReset} className="btn-ghost w-full py-3 flex items-center justify-center gap-2">
               <RotateCcw className="w-4 h-4" /> Start a New Assessment

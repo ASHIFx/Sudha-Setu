@@ -1,4 +1,6 @@
-import { CheckCircle, AlertTriangle, XCircle, Info, Leaf } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle, AlertTriangle, XCircle, Info, Leaf, Volume2, VolumeX } from 'lucide-react';
+import useSpeech from '../../hooks/useSpeech.js';
 
 const LEVEL_CONFIG = {
   low: {
@@ -30,20 +32,60 @@ const LEVEL_CONFIG = {
   },
 };
 
-export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanReview, status, caseId }) {
+export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanReview, status, caseId, lang = 'hi-IN' }) {
   const cfg = LEVEL_CONFIG[dangerLevel] ?? LEVEL_CONFIG.low;
   const advice = verifiedAdvice ?? {};
+  const { speak, stopSpeaking, speaking, ttsSupported } = useSpeech({ lang });
+
+  const buildSpeechText = () => {
+    const parts = [cfg.label, cfg.tagline];
+    if (advice.generalTips?.length) {
+      parts.push('General Tips: ' + advice.generalTips.join('. '));
+    }
+    if (advice.ayurvedicDietaryNotes?.length) {
+      parts.push('Ayurvedic Dietary Guidance: ' + advice.ayurvedicDietaryNotes.join('. '));
+    }
+    if (advice.safeRemedies?.length) {
+      parts.push('Safe Home Remedies: ' + advice.safeRemedies.join('. '));
+    }
+    return parts.join('. ');
+  };
+
+  const handleToggleSpeech = () => {
+    if (speaking) {
+      stopSpeaking();
+    } else {
+      speak(buildSpeechText(), { lang });
+    }
+  };
 
   return (
     <div className={`rounded-2xl border-2 overflow-hidden shadow-sm ${cfg.wrapper}`}>
-      <div className={`px-6 py-4 border-b ${cfg.header} flex items-center gap-3`}>
-        {cfg.icon}
-        <div>
-          <p className={`text-sm font-bold uppercase tracking-wider ${cfg.labelColor}`}>
-            {cfg.label}
-          </p>
-          <p className="text-sm mt-0.5">{cfg.tagline}</p>
+      <div className={`px-6 py-4 border-b ${cfg.header} flex items-center justify-between`}>
+        <div className="flex items-center gap-3">
+          {cfg.icon}
+          <div>
+            <p className={`text-sm font-bold uppercase tracking-wider ${cfg.labelColor}`}>
+              {cfg.label}
+            </p>
+            <p className="text-sm mt-0.5">{cfg.tagline}</p>
+          </div>
         </div>
+
+        {ttsSupported && (
+          <button
+            onClick={handleToggleSpeech}
+            className={`p-2 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold ${
+              speaking
+                ? 'bg-red-600 text-white animate-pulse'
+                : 'bg-white/80 hover:bg-white text-slate-700 border border-slate-200'
+            }`}
+            title={speaking ? 'Stop Audio' : 'Read Aloud'}
+          >
+            {speaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            <span>{speaking ? 'Stop' : 'Read Aloud'}</span>
+          </button>
+        )}
       </div>
 
       <div className="p-6 space-y-5">

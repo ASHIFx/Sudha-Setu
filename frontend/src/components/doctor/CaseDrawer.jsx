@@ -28,6 +28,20 @@ export default function CaseDrawer({ caseId, onClose }) {
     sleepPattern: '',
   });
   const [prescription, setPrescription] = useState([{ ...EMPTY_RX }]);
+  const [dispatching, setDispatching] = useState(false);
+
+  const handleDispatchAmbulance = async () => {
+    setDispatching(true);
+    try {
+      await api.post('/ambulance/dispatch', { caseId });
+      toast.success('Emergency ambulance dispatched!');
+      fetchCase();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to dispatch ambulance');
+    } finally {
+      setDispatching(false);
+    }
+  };
 
   const fetchCase = useCallback(async () => {
     setLoading(true);
@@ -157,6 +171,26 @@ export default function CaseDrawer({ caseId, onClose }) {
                   </p>
                 </div>
               </div>
+
+              {caseDoc.dangerLevel === 'high' && (
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between bg-red-50 p-3 rounded-xl border border-red-200">
+                  <div>
+                    <p className="font-bold text-red-900 text-xs">High Risk Case Detected</p>
+                    <p className="text-xs text-red-700">Immediate hospital & ambulance intervention</p>
+                  </div>
+                  <button
+                    onClick={handleDispatchAmbulance}
+                    disabled={dispatching || caseDoc.status === 'emergency_alerted'}
+                    className="btn-danger px-3 py-1.5 text-xs font-bold"
+                  >
+                    {caseDoc.status === 'emergency_alerted'
+                      ? 'Ambulance Alerted ✓'
+                      : dispatching
+                      ? 'Dispatching…'
+                      : 'Dispatch Ambulance'}
+                  </button>
+                </div>
+              )}
             </section>
 
             {caseDoc.symptoms?.length > 0 && (

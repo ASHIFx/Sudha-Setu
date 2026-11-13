@@ -1,30 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Phone, MapPin, Ambulance, X, AlertTriangle } from 'lucide-react';
-
-const MOCK_HOSPITALS = [
-  { name: 'AIIMS Rishikesh', phone: '01332-226888', distance: '2.4 km' },
-  { name: 'Himalayan Hospital, Dehradun', phone: '0135-2471000', distance: '5.1 km' },
-  { name: 'Government District Hospital', phone: '01344-222222', distance: '7.8 km' },
-];
+import api from '../../lib/api.js';
 
 export default function SosOverlay({ caseId, onDismiss }) {
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState(10);
   const [dispatched, setDispatched] = useState(false);
-  const [nearest] = useState(MOCK_HOSPITALS[0]);
+  const [hospital, setHospital] = useState(null);
+  const [dispatchInfo, setDispatchInfo] = useState(null);
+
+  const triggerDispatch = async () => {
+    if (!caseId) return;
+    try {
+      const { data } = await api.post('/ambulance/dispatch', { caseId });
+      setDispatchInfo(data.dispatch);
+      if (data.hospital) {
+        setHospital(data.hospital);
+      }
+      setDispatched(true);
+    } catch (err) {
+      console.warn('[sos] Dispatch request failed:', err.message);
+    }
+  };
 
   useEffect(() => {
+    // Automatically trigger real backend dispatch on SOS
+    triggerDispatch();
+
     const timer = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          setDispatched(true);
           return 0;
         }
         return c - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [caseId]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-700 bg-opacity-97 text-white px-4">
@@ -48,26 +60,32 @@ export default function SosOverlay({ caseId, onDismiss }) {
         </div>
 
         <div>
-          <h1 className="text-4xl font-black tracking-tight">EMERGENCY</h1>
-          <p className="text-red-200 text-lg mt-2">Critical symptoms detected. Emergency services alerted.</p>
+          <h1 className="text-4xl font-black tracking-tight">EMERGENCY ALERT</h1>
+          <p className="text-red-200 text-lg mt-2">Critical symptoms detected. Emergency dispatch triggered.</p>
         </div>
 
-        <div className="bg-white/10 rounded-2xl p-5 text-left space-y-3">
-          <p className="flex items-center gap-2 font-semibold text-lg">
-            <MapPin className="w-5 h-5 text-red-200" /> Nearest Hospital
-          </p>
-          <div>
-            <p className="font-bold text-xl">{nearest.name}</p>
-            <p className="text-red-200 text-sm">{nearest.distance} away</p>
+        {hospital && (
+          <div className="bg-white/10 rounded-2xl p-5 text-left space-y-3">
+            <p className="flex items-center gap-2 font-semibold text-lg">
+              <MapPin className="w-5 h-5 text-red-200" /> Assigned Nearest Hospital
+            </p>
+            <div>
+              <p className="font-bold text-xl">{hospital.name}</p>
+              {hospital.phone && (
+                <p className="text-red-200 text-sm">Emergency Desk: {hospital.phone}</p>
+              )}
+            </div>
+            {hospital.phone && (
+              <a
+                href={`tel:${hospital.phone}`}
+                className="flex items-center gap-3 bg-white text-red-700 font-bold rounded-xl px-5 py-3 hover:bg-red-50 transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+                Call Hospital: {hospital.phone}
+              </a>
+            )}
           </div>
-          <a
-            href={`tel:${nearest.phone}`}
-            className="flex items-center gap-3 bg-white text-red-700 font-bold rounded-xl px-5 py-3 hover:bg-red-50 transition-colors"
-          >
-            <Phone className="w-5 h-5" />
-            Call Hospital: {nearest.phone}
-          </a>
-        </div>
+        )}
 
         <div className="bg-white/10 rounded-2xl p-5">
           <div className="flex items-center gap-3">
@@ -75,23 +93,20 @@ export default function SosOverlay({ caseId, onDismiss }) {
             {dispatched ? (
               <div className="text-left">
                 <p className="font-bold text-lg">Ambulance Dispatched ✓</p>
-                <p className="text-red-200 text-sm">Estimated arrival: 8–12 minutes</p>
+                <p className="text-red-200 text-sm">
+                  {dispatchInfo?.status === 'accepted'
+                    ? 'Unit is en route to patient coordinates'
+                    : 'Dispatch recorded. Emergency responder alerted.'}
+                </p>
               </div>
             ) : (
               <div className="text-left">
-                <p className="font-bold text-lg">Dispatching Ambulance…</p>
+                <p className="font-bold text-lg">Contacting Emergency Fleet…</p>
                 <p className="text-red-200 text-sm">
-                  Dispatch confirmed in{' '}
-                  <span className="text-white font-black text-xl">{countdown}s</span>
+                  Auto-connecting in <span className="text-white font-black text-xl">{countdown}s</span>
                 </p>
               </div>
             )}
-          </div>
-          <div className="mt-3 bg-white/10 rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full bg-white transition-all duration-1000"
-              style={{ width: `${((30 - countdown) / 30) * 100}%` }}
-            />
           </div>
         </div>
 

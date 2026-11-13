@@ -16,6 +16,12 @@ const messageSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    citations: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'KnowledgeBase',
+      },
+    ],
   },
   { _id: false }
 );

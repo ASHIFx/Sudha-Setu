@@ -11,12 +11,16 @@ import VerifyOtpPage from './pages/auth/VerifyOtpPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import IntakePage from './pages/patient/IntakePage.jsx';
 import DashboardPage from './pages/doctor/DashboardPage.jsx';
+import AmbulanceDashboardPage from './pages/ambulance/DashboardPage.jsx';
+import AdminDashboardPage from './pages/admin/DashboardPage.jsx';
 import Spinner from './components/ui/Spinner.jsx';
 
 function RoleRedirect() {
   const user = useSelector((s) => s.auth.user);
   if (!user) return <Navigate to="/login" replace />;
-  if (['doctor', 'support', 'admin'].includes(user.role)) return <Navigate to="/doctor/dashboard" replace />;
+  if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  if (user.role === 'ambulance') return <Navigate to="/ambulance/dashboard" replace />;
+  if (['doctor', 'support'].includes(user.role)) return <Navigate to="/doctor/dashboard" replace />;
   return <Navigate to="/intake" replace />;
 }
 
@@ -61,6 +65,24 @@ export default function App() {
             element={
               <ProtectedRoute allowedRoles={['doctor', 'support', 'admin']}>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/ambulance/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['ambulance', 'admin']}>
+                <AmbulanceDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboardPage />
               </ProtectedRoute>
             }
           />
