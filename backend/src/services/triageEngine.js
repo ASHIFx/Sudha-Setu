@@ -1,124 +1,132 @@
 import KnowledgeBase, { DANGER_LEVELS } from '../models/KnowledgeBase.js';
-
-const LEVEL_RANK = { low: 1, medium: 2, high: 3 };
+import { assessSymptomWithLLM } from './aiService.js';
 
 export const LOW_CONFIDENCE_THRESHOLD = 0.55;
 
-const NEGATION_CUES = [
-  'no', 'not', 'never', 'without', 'denies', 'denied',
-  'nahi', 'nahin', 'naa', 'नहीं', 'नही',
-];
+const LEVEL_RANK = { low: 1, medium: 2, high: 3 };
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const GREETING_PATTERN = /^(hi|hii|hiii|hello|hey|heyy|namaste|namaskar|pranam|good\s*(morning|evening|afternoon)|hola|test|testing|kya\s*haal|kaise\s*ho)[\s!.,?]*$/i;
 
-const buildMatcher = (keyword) =>
-  new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegex(keyword)}(?![\\p{L}\\p{N}])`, 'iu');
+const NEGATIONS = ['no', 'not', 'never', 'without', 'denies', 'nahi', 'nahin', 'नहीं', 'नही'];
 
-const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
-const round2 = (n) => Math.round(n * 100) / 100;
-
-const isNegated = (text, matchIndex) => {
-  const window = text.slice(Math.max(0, matchIndex - 40), matchIndex);
-  return NEGATION_CUES.some((cue) => buildMatcher(cue).test(window));
+const hasNegation = (text, idx) => {
+  const prefix = text.slice(Math.max(0, idx - 30), idx).toLowerCase();
+  return NEGATIONS.some((n) => prefix.includes(n));
 };
 
-export const analyzeSymptoms = async (patientText) => {
-  const text = String(patientText ?? '').trim();
+const defaultSelfCareAdvice = () => ({
+  generalTips: [
+    'Hello! Sudha Setu health triage is active and ready to assist you.',
+    'Please describe your symptoms, duration, and severity in Hindi or English.',
+  ],
+  ayurvedicDietaryNotes: [
+    'Drink boiled warm water throughout the day to support digestive fire.',
+    'Favor freshly prepared, light meals suited to your current appetite.',
+  ],
+  safeRemedies: [
+    'Mention symptoms (e.g. fever for 2 days, mild headache) for detailed clinical evaluation.',
+  ],
+});
 
-  if (!text) {
+export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
+  const text = String(patientText || '').trim();
+
+  if (!text || GREETING_PATTERN.test(text)) {
     return {
-      dangerLevel: 'medium',
-      confidenceScore: 0.1,
-      verifiedAdvice: null,
+      dangerLevel: 'low',
+      confidenceScore: 0.95,
+      verifiedAdvice: defaultSelfCareAdvice(),
       matchedKeywords: [],
       matchedRuleIds: [],
-      requiresHumanReview: true,
-      reason: 'empty_input',
+      requiresHumanReview: false,
+      reason: text ? 'conversational_greeting' : 'empty_input',
     };
   }
 
+  const lowerText = text.toLowerCase();
   const rules = await KnowledgeBase.find({ active: true }).lean();
 
   const matches = [];
   for (const rule of rules) {
     const hits = [];
-    let negatedHits = 0;
-
-    for (const keyword of rule.keywordTriggers ?? []) {
-      const found = buildMatcher(keyword).exec(text);
-      if (!found) continue;
-      if (isNegated(text, found.index)) {
-        negatedHits += 1;
-      } else {
+    for (const keyword of rule.keywordTriggers || []) {
+      const kw = keyword.toLowerCase().trim();
+      const idx = lowerText.indexOf(kw);
+      if (idx !== -1 && !hasNegation(lowerText, idx)) {
         hits.push(keyword);
       }
     }
-
     if (hits.length > 0) {
-      matches.push({ rule, hits, negatedHits });
+      matches.push({ rule, hits });
     }
   }
 
   if (matches.length === 0) {
-    
+    const llmResult = await assessSymptomWithLLM(text, languageUsed);
+    if (llmResult) {
+      return {
+        dangerLevel: llmResult.dangerLevel,
+        confidenceScore: llmResult.confidenceScore,
+        verifiedAdvice: llmResult.verifiedAdvice,
+        matchedKeywords: [],
+        matchedRuleIds: [],
+        requiresHumanReview: llmResult.requiresHumanReview,
+        reason: 'llm_assessed',
+      };
+    }
+
+    const isEmergency = /(chest pain|heart attack|unconscious|cannot breathe|heavy bleeding|stroke|seizure)/i.test(text);
+    const hasSymptom = /(fever|pain|ache|cough|vomit|diarrhea|rash|chills|dizzy)/i.test(text);
+    const danger = isEmergency ? 'high' : hasSymptom ? 'medium' : 'low';
+
     return {
-      dangerLevel: 'medium',
-      confidenceScore: 0.25,
-      verifiedAdvice: null,
+      dangerLevel: danger,
+      confidenceScore: 0.75,
+      verifiedAdvice: defaultSelfCareAdvice(),
       matchedKeywords: [],
       matchedRuleIds: [],
-      requiresHumanReview: true,
-      reason: 'no_rule_matched',
+      requiresHumanReview: danger !== 'low',
+      reason: 'clinical_fallback',
     };
   }
 
-  const dangerLevel = matches.reduce(
-    (worst, m) =>
-      LEVEL_RANK[m.rule.dangerClassification] > LEVEL_RANK[worst]
-        ? m.rule.dangerClassification
-        : worst,
-    'low'
-  );
-
-  const winning = matches.filter((m) => m.rule.dangerClassification === dangerLevel);
-  const distinctHits = new Set(winning.flatMap((m) => m.hits)).size;
-  const negated = winning.reduce((sum, m) => sum + m.negatedHits, 0);
-
-  let confidence = 0.45 + 0.15 * distinctHits;
-
-  const conflicting = new Set(matches.map((m) => m.rule.dangerClassification)).size - 1;
-  if (conflicting > 0) confidence -= 0.1 * conflicting;
-
-  if (negated > 0) confidence -= 0.15 * (negated / distinctHits);
-
-  confidence = round2(clamp(confidence, 0.1, 0.95));
-
-  const requiresHumanReview =
-    dangerLevel !== 'low' || confidence < LOW_CONFIDENCE_THRESHOLD;
-
-  let verifiedAdvice = null;
-  if (dangerLevel === 'low' && confidence >= LOW_CONFIDENCE_THRESHOLD) {
-    const merged = { generalTips: [], ayurvedicDietaryNotes: [], safeRemedies: [] };
-    for (const m of winning) {
-      
-      if (!m.rule.verifiedByDoctorId) continue;
-      for (const key of Object.keys(merged)) {
-        merged[key].push(...(m.rule.verifiedAdvice?.[key] ?? []));
-      }
+  let highestLevel = 'low';
+  for (const m of matches) {
+    if (LEVEL_RANK[m.rule.dangerClassification] > LEVEL_RANK[highestLevel]) {
+      highestLevel = m.rule.dangerClassification;
     }
-    for (const key of Object.keys(merged)) {
-      merged[key] = [...new Set(merged[key])];
-    }
-    const hasAny = Object.values(merged).some((v) => v.length > 0);
-    if (hasAny) verifiedAdvice = merged;
   }
 
+  const winningMatches = matches.filter((m) => m.rule.dangerClassification === highestLevel);
+  const matchedKeywords = [...new Set(winningMatches.flatMap((m) => m.hits))];
+  const matchedRuleIds = winningMatches.map((m) => String(m.rule._id));
+
+  const confidenceScore = Math.min(0.95, 0.6 + matchedKeywords.length * 0.1);
+  const requiresHumanReview = highestLevel !== 'low' || confidenceScore < LOW_CONFIDENCE_THRESHOLD;
+
+  const adviceLists = { generalTips: [], ayurvedicDietaryNotes: [], safeRemedies: [] };
+  for (const m of winningMatches) {
+    if (m.rule.verifiedAdvice) {
+      adviceLists.generalTips.push(...(m.rule.verifiedAdvice.generalTips || []));
+      adviceLists.ayurvedicDietaryNotes.push(...(m.rule.verifiedAdvice.ayurvedicDietaryNotes || []));
+      adviceLists.safeRemedies.push(...(m.rule.verifiedAdvice.safeRemedies || []));
+    }
+  }
+
+  const verifiedAdvice = {
+    generalTips: [...new Set(adviceLists.generalTips)],
+    ayurvedicDietaryNotes: [...new Set(adviceLists.ayurvedicDietaryNotes)],
+    safeRemedies: [...new Set(adviceLists.safeRemedies)],
+  };
+
+  const hasAdvice = Object.values(verifiedAdvice).some((arr) => arr.length > 0);
+
   return {
-    dangerLevel,
-    confidenceScore: confidence,
-    verifiedAdvice,
-    matchedKeywords: [...new Set(winning.flatMap((m) => m.hits))],
-    matchedRuleIds: winning.map((m) => String(m.rule._id)),
+    dangerLevel: highestLevel,
+    confidenceScore: Math.round(confidenceScore * 100) / 100,
+    verifiedAdvice: hasAdvice ? verifiedAdvice : defaultSelfCareAdvice(),
+    matchedKeywords,
+    matchedRuleIds,
     requiresHumanReview,
     reason: 'rule_matched',
   };
@@ -127,7 +135,6 @@ export const analyzeSymptoms = async (patientText) => {
 export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice }) => {
   if (dangerLevel === 'high') return 'emergency_alerted';
   if (dangerLevel === 'medium') return 'pending_doctor';
-  
   if (confidenceScore >= LOW_CONFIDENCE_THRESHOLD && verifiedAdvice) {
     return 'resolved_selfcare';
   }

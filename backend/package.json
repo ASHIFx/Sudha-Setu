@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Sudha Setu - multilingual pre-consultation and case-taking API (SIH26047, Ministry of Ayush)",
+  "description": "Sudha Setu - multilingual clinical pre-consultation and case-taking API",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

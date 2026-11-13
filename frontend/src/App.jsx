@@ -13,6 +13,9 @@ import IntakePage from './pages/patient/IntakePage.jsx';
 import DashboardPage from './pages/doctor/DashboardPage.jsx';
 import AmbulanceDashboardPage from './pages/ambulance/DashboardPage.jsx';
 import AdminDashboardPage from './pages/admin/DashboardPage.jsx';
+import ProfilePage from './pages/profile/ProfilePage.jsx';
+import MedicinesPage from './pages/medicines/MedicinesPage.jsx';
+import ProvidersPage from './pages/directory/ProvidersPage.jsx';
 import Spinner from './components/ui/Spinner.jsx';
 
 function RoleRedirect() {
@@ -46,10 +49,21 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/medicines" element={<MedicinesPage />} />
+          <Route path="/providers" element={<ProvidersPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/intake"

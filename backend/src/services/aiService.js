@@ -4,7 +4,7 @@ import {
   extractCitations,
 } from './ragService.js';
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.5-flash-lite';
 
 const BASE_SYSTEM_INSTRUCTION =
   'You are Sudha Setu AI, an intelligent clinical health triage and wellness assistant. ' +
@@ -19,7 +19,7 @@ const BASE_SYSTEM_INSTRUCTION =
   'in your response using the exact format: [Ref: Rule <RULE_ID>] (e.g. "[Ref: Rule 64f123...]"). ' +
   'This is mandatory so reviewing doctors can trace and audit the clinical source.\n' +
   '3. If the user describes symptoms not covered in the retrieved Knowledge Base entries, ' +
-  'explicitly state that no pre-verified protocol is found and recommend a consultation with an Ayurvedic doctor.\n' +
+  'explicitly state that no pre-verified protocol is found and recommend a consultation with a qualified doctor.\n' +
   '4. Never invent unverified medicines or clinical claims.';
 
 const buildHistory = (storedMessages) =>
@@ -38,6 +38,58 @@ const getClient = () => {
   }
   _client = new GoogleGenAI({ apiKey });
   return _client;
+};
+
+export const assessSymptomWithLLM = async (patientText, languageUsed = 'en') => {
+  const client = getClient();
+  if (!client) return null;
+
+  const prompt = `Analyze this user input for an intelligent health triage system.
+User Input: "${patientText}"
+Language: ${languageUsed}
+
+Respond ONLY with valid JSON having this exact structure:
+{
+  "isGreeting": true or false,
+  "dangerLevel": "low" or "medium" or "high",
+  "confidenceScore": number between 0.6 and 0.98,
+  "requiresHumanReview": true or false,
+  "generalTips": ["string tip 1", "string tip 2"],
+  "ayurvedicDietaryNotes": ["dietary tip 1", "dietary tip 2"],
+  "safeRemedies": ["safe home remedy or next step 1"]
+}
+
+Guidelines:
+- If input is a greeting or general phrase without symptoms (e.g., "hi", "hii", "hello", "namaste", "pranam", "how are you"), set isGreeting: true, dangerLevel: "low", requiresHumanReview: false.
+- If input indicates severe distress, chest pain, stroke, breathing collapse, or massive trauma, set dangerLevel: "high", requiresHumanReview: true.
+- If input describes persistent or moderate acute disease, set dangerLevel: "medium", requiresHumanReview: true.
+- If input is mild or conversational wellness, set dangerLevel: "low", requiresHumanReview: false.`;
+
+  try {
+    const response = await client.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const parsed = JSON.parse(response.text);
+    return {
+      dangerLevel: parsed.dangerLevel || 'low',
+      confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.85,
+      requiresHumanReview: Boolean(parsed.requiresHumanReview),
+      isGreeting: Boolean(parsed.isGreeting),
+      verifiedAdvice: {
+        generalTips: Array.isArray(parsed.generalTips) ? parsed.generalTips : [],
+        ayurvedicDietaryNotes: Array.isArray(parsed.ayurvedicDietaryNotes) ? parsed.ayurvedicDietaryNotes : [],
+        safeRemedies: Array.isArray(parsed.safeRemedies) ? parsed.safeRemedies : [],
+      },
+    };
+  } catch (err) {
+    console.warn('[aiService] LLM assessment fallback:', err.message);
+    return null;
+  }
 };
 
 export const sendChatMessage = async (storedMessages, userMessage, { retrievedRules = [] } = {}) => {

@@ -47,7 +47,7 @@ export const intakeCase = async (req, res, next) => {
       ...(ayurvedicMarkers ?? {}),
     };
 
-    const assessment = await analyzeSymptoms(patientText);
+    const assessment = await analyzeSymptoms(patientText, languageUsed);
     const status = statusForAssessment(assessment);
 
     const caseSheet = await CaseSheet.create({
@@ -62,12 +62,14 @@ export const intakeCase = async (req, res, next) => {
       location: location?.lat != null && location?.lng != null ? location : undefined,
     });
 
-    req.app.get('io')?.to('doctors').emit('case:new', {
-      caseId: caseSheet._id,
-      dangerLevel: caseSheet.dangerLevel,
-      status: caseSheet.status,
-      createdAt: caseSheet.createdAt,
-    });
+    if (caseSheet.dangerLevel !== 'low' || status === 'pending_doctor') {
+      req.app.get('io')?.to('doctors').emit('case:new', {
+        caseId: caseSheet._id,
+        dangerLevel: caseSheet.dangerLevel,
+        status: caseSheet.status,
+        createdAt: caseSheet.createdAt,
+      });
+    }
 
     res.status(201).json({
       caseId: caseSheet._id,
@@ -247,6 +249,18 @@ export const getCasePDF = async (req, res, next) => {
     res.setHeader('Content-Disposition', `inline; filename="case-${id}.pdf"`);
 
     generateCaseSheetPDF(caseSheet, res);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyCases = async (req, res, next) => {
+  try {
+    const cases = await CaseSheet.find({ patientId: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .populate('assignedDoctorId', 'name');
+    res.json({ cases });
   } catch (err) {
     next(err);
   }

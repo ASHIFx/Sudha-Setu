@@ -1,7 +1,7 @@
 {
   "name": "sudha-setu",
   "version": "1.0.0",
-  "description": "Sudha Setu - Voice-enabled Ayurvedic Pre-consultation Platform (Ministry of Ayush)",
+  "description": "Sudha Setu - Voice-enabled Clinical Health Triage & Fleet Orchestration Platform",
   "private": true,
   "scripts": {
     "dev:backend": "npm --prefix backend run dev",

@@ -1,118 +1,53 @@
-﻿import { GoogleGenAI, Type } from '@google/genai';
+﻿import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-3.6-flash';
-
-const EXTRACTION_TIMEOUT_MS = 3000;
-
-const RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    symptoms: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: {
-            type: Type.STRING,
-            description: 'Symptom name in lowercase English',
-          },
-          duration: {
-            type: Type.STRING,
-            description: 'How long the patient has had this symptom, e.g. "3 days"',
-          },
-          severity: {
-            type: Type.INTEGER,
-            description: 'Severity on a scale of 1 (mild) to 10 (severe)',
-          },
-        },
-        required: ['name'],
-      },
-      description: 'List of symptoms mentioned by the patient',
-    },
-    ayurvedicMarkers: {
-      type: Type.OBJECT,
-      properties: {
-        suspectedPrakriti: {
-          type: Type.STRING,
-          enum: ['vata', 'pitta', 'kapha', 'vata-pitta', 'pitta-kapha', 'vata-kapha', 'tridosha', 'unknown'],
-          description: 'Suspected Ayurvedic body constitution (prakriti)',
-        },
-        agniStatus: {
-          type: Type.STRING,
-          enum: ['sama', 'vishama', 'tikshna', 'manda', 'unknown'],
-          description: 'Estimated digestive fire (agni) status',
-        },
-        dietHabits: {
-          type: Type.STRING,
-          description: 'Any dietary habits or patterns mentioned or implied',
-        },
-        sleepPattern: {
-          type: Type.STRING,
-          description: 'Any sleep-related patterns mentioned or implied',
-        },
-      },
-      required: ['suspectedPrakriti', 'agniStatus'],
-    },
-  },
-  required: ['symptoms', 'ayurvedicMarkers'],
-};
+const MODEL = 'gemini-3.5-flash-lite';
 
 let _client = null;
 
 const getClient = () => {
   if (_client) return _client;
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey.includes('your_actual')) {
-    return null;
-  }
+  if (!apiKey || apiKey.includes('your_actual')) return null;
   _client = new GoogleGenAI({ apiKey });
   return _client;
 };
 
-const withTimeout = (promise, ms) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`extraction timed out after ${ms}ms`)), ms)
-    ),
-  ]);
-
 export const extractIntakeData = async (patientText) => {
   const client = getClient();
-  if (!client) {
-    throw new Error('GEMINI_API_KEY is not configured');
+  if (!client || !patientText?.trim()) {
+    return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };
   }
 
-  const prompt =
-    'You are a clinical data extractor for an Ayurvedic triage system. ' +
-    'Extract structured symptom and Ayurvedic marker information from the patient description below. ' +
-    'Return only what can be inferred from the text — do not fabricate details. ' +
-    'For any Ayurvedic fields you cannot determine, use "unknown".\n\n' +
-    'Patient description:\n' +
-    patientText;
+  const prompt = `Extract clinical symptom data and Ayurvedic markers from this patient description:
+"${patientText}"
 
-  const response = await withTimeout(
-    client.models.generateContent({
+Respond ONLY with valid JSON in this format:
+{
+  "symptoms": [{"name": "string", "duration": "string", "severity": number}],
+  "ayurvedicMarkers": {
+    "suspectedPrakriti": "vata" | "pitta" | "kapha" | "vata-pitta" | "pitta-kapha" | "vata-kapha" | "tridosha" | "unknown",
+    "agniStatus": "sama" | "vishama" | "tikshna" | "manda" | "unknown",
+    "dietHabits": "string or empty",
+    "sleepPattern": "string or empty"
+  }
+}`;
+
+  try {
+    const res = await client.models.generateContent({
       model: MODEL,
       contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: RESPONSE_SCHEMA,
-      },
-    }),
-    EXTRACTION_TIMEOUT_MS
-  );
+      config: { responseMimeType: 'application/json' },
+    });
 
-  const parsed = JSON.parse(response.text);
-
-  if (!Array.isArray(parsed.symptoms) || typeof parsed.ayurvedicMarkers !== 'object') {
-    throw new Error('extraction response did not match expected shape');
+    const data = JSON.parse(res.text);
+    return {
+      symptoms: Array.isArray(data.symptoms)
+        ? data.symptoms.filter((s) => s && typeof s.name === 'string')
+        : [],
+      ayurvedicMarkers: data.ayurvedicMarkers || { suspectedPrakriti: 'unknown', agniStatus: 'unknown' },
+    };
+  } catch (err) {
+    console.warn('[extractor] extraction skipped:', err.message);
+    return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };
   }
-
-  return {
-    symptoms: parsed.symptoms.filter(
-      (s) => s && typeof s.name === 'string' && s.name.trim()
-    ),
-    ayurvedicMarkers: parsed.ayurvedicMarkers,
-  };
 };

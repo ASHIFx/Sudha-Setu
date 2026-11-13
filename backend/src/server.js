@@ -20,6 +20,7 @@ import doctorRoutes from './routes/doctorRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import ambulanceRoutes from './routes/ambulanceRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import directoryRoutes from './routes/directoryRoutes.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -76,6 +77,7 @@ app.use('/api/doctor', doctorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ambulance', ambulanceRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/directory', directoryRoutes);
 
 app.use(express.static(frontendDist));
 

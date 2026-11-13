@@ -7,6 +7,7 @@ import {
   logout,
   refresh,
   getMe,
+  updateProfile,
   verifyOtp,
   resendVerificationOtp,
   forgotPassword,
@@ -43,5 +44,6 @@ router.post('/reset-password', otpLimiter, resetPassword);
 router.post('/logout', logout);
 router.post('/refresh', refresh);
 router.get('/me', protect, getMe);
+router.patch('/profile', protect, updateProfile);
 
 export default router;

@@ -245,6 +245,32 @@ export default function LandingPage() {
           </Link>
 
           <Link
+            to="/medicines"
+            className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">Medicines Directory</h3>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Browse classical Churnas, Rasayanas, active botanicals, and clinical indications.
+            </p>
+          </Link>
+
+          <Link
+            to="/providers"
+            className="card hover:border-teal-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm group-hover:text-teal-400 transition-colors">Doctors & Fleet</h3>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors" />
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Live roster of verified practitioners and active emergency ambulance vehicles.
+            </p>
+          </Link>
+
+          <Link
             to="/doctor/dashboard"
             className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
           >
@@ -258,25 +284,12 @@ export default function LandingPage() {
           </Link>
 
           <Link
-            to="/ambulance/dashboard"
-            className="card hover:border-rose-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-rose-400 transition-colors">Emergency Fleet</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-rose-400 transition-colors" />
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Real-time emergency run alerts, patient GPS routing, and status tracking.
-            </p>
-          </Link>
-
-          <Link
             to="/admin/dashboard"
-            className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
+            className="card hover:border-teal-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">Admin Telemetry</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+              <h3 className="font-bold text-white text-sm group-hover:text-teal-400 transition-colors">Admin Console</h3>
+              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors" />
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Platform telemetry, doctor credentialing, and fleet orchestration.

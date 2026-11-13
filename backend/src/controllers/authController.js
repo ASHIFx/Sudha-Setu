@@ -18,6 +18,8 @@ const toPublicUser = (user) => ({
   name: user.name,
   email: user.email,
   role: user.role,
+  phone: user.phone ?? null,
+  languagePreference: user.languagePreference ?? 'en',
   abhaId: user.abhaId ?? null,
 });
 
@@ -85,9 +87,6 @@ export const register = async (req, res, next) => {
       return res.status(200).json({
         message: 'This account is not verified yet. A new verification code has been sent.',
         user: { id: existing._id, email: existing.email },
-        ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
-          ? { devOtp: delivery.code }
-          : {}),
       });
     }
 
@@ -104,9 +103,6 @@ export const register = async (req, res, next) => {
     res.status(201).json({
       message: 'Account created. Check your email for a verification code.',
       user: { id: user._id, email: user.email },
-      ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
-        ? { devOtp: delivery.code }
-        : {}),
     });
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -185,12 +181,9 @@ export const resendVerificationOtp = async (req, res, next) => {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (user && !user.emailVerified) {
-      const delivery = await sendOtpFor(user, 'verify_email');
+      await sendOtpFor(user, 'verify_email');
       return res.status(200).json({
         message: 'A new verification code has been sent.',
-        ...(process.env.NODE_ENV !== 'production' && !delivery.delivered
-          ? { devOtp: delivery.code }
-          : {}),
       });
     }
 
@@ -329,6 +322,24 @@ export const refresh = async (req, res, next) => {
 
 export const getMe = async (req, res) => {
   res.json({ user: toPublicUser(req.user) });
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone, abhaId, languagePreference } = req.body ?? {};
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (typeof name === 'string' && name.trim()) user.name = name.trim();
+    if (typeof phone === 'string') user.phone = phone.trim() || undefined;
+    if (typeof abhaId === 'string') user.abhaId = abhaId.trim() || undefined;
+    if (typeof languagePreference === 'string') user.languagePreference = languagePreference;
+    await user.save();
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    next(err);
+  }
 };
 
 export { USER_ROLES };

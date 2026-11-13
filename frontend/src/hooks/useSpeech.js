@@ -111,17 +111,25 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
 
       const utterance = new window.SpeechSynthesisUtterance(cleanText);
       utterance.lang = targetLang;
-      utterance.rate = options.rate ?? 1.0;
-      utterance.pitch = options.pitch ?? 1.0;
+      utterance.rate = options.rate ?? 0.9;
+      utterance.pitch = options.pitch ?? 1.02;
+      utterance.volume = options.volume ?? 0.88;
 
       const voices = synth.getVoices?.() || [];
-      const matchVoice =
-        voices.find((v) => v.lang === targetLang) ||
-        voices.find((v) => v.lang.startsWith(targetLang.split('-')[0])) ||
+      const langPrefix = targetLang.split('-')[0];
+      const langMatches = voices.filter(
+        (v) => v.lang === targetLang || v.lang.startsWith(langPrefix)
+      );
+
+      const softVoice =
+        langMatches.find((v) => /natural|soft|swara|neerja|google|female|zira|samantha/i.test(v.name)) ||
+        langMatches.find((v) => !/male|david|mark/i.test(v.name)) ||
+        langMatches[0] ||
+        voices.find((v) => /natural|female/i.test(v.name)) ||
         voices[0];
 
-      if (matchVoice) {
-        utterance.voice = matchVoice;
+      if (softVoice) {
+        utterance.voice = softVoice;
       }
 
       utterance.onstart = () => {

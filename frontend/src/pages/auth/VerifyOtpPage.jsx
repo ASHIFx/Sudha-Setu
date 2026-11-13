@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Loader2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,8 +9,6 @@ import { setUser } from '../../store/authSlice.js';
 export default function VerifyOtpPage() {
   const [searchParams] = useSearchParams();
   const prefillEmail = searchParams.get('email') ?? '';
-  const location = useLocation();
-  const developmentOtp = location.state?.devOtp;
 
   const [email, setEmail] = useState(prefillEmail);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -71,10 +69,8 @@ export default function VerifyOtpPage() {
     if (!email.trim()) return;
     setResending(true);
     try {
-      const { data } = await api.post('/auth/resend-otp', { email: email.trim() });
-      toast.success(
-        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new code has been sent if the email is registered.'
-      );
+      await api.post('/auth/resend-otp', { email: email.trim() });
+      toast.success('A new verification code has been sent to your email.');
     } catch (err) {
       toast.error(err.response?.data?.message ?? 'Could not resend verification code.');
     } finally {
@@ -96,11 +92,6 @@ export default function VerifyOtpPage() {
           <p className="text-xs text-slate-400 mt-1">
             Sent to <span className="font-semibold text-slate-200">{email || 'your email'}</span>
           </p>
-          {developmentOtp && (
-            <div className="mt-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center text-xs text-emerald-300">
-              Dev Mode OTP: <span className="font-mono font-bold tracking-wider">{developmentOtp}</span>
-            </div>
-          )}
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-5">

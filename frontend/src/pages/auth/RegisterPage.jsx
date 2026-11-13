@@ -17,20 +17,14 @@ export default function RegisterPage() {
     if (!form.name.trim() || !form.email.trim() || !form.password) return;
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/register', {
+      await api.post('/auth/register', {
         name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
         abhaId: form.abhaId.trim() || undefined,
       });
-      toast.success(
-        data.devOtp
-          ? `Development OTP: ${data.devOtp}`
-          : 'Account created! Enter the verification code sent to your email.'
-      );
-      navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`, {
-        state: { devOtp: data.devOtp },
-      });
+      toast.success('Account created! Please enter the 6-digit code sent to your email.');
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`);
     } catch (err) {
       const msg = err.response?.data?.message ?? 'Registration failed. Please try again.';
       toast.error(msg);
