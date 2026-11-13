@@ -1,16 +1,51 @@
-# Sudha Setu
+# Sudha Setu (सुधा सेतु)
+> Voice-Enabled Multilingual Ayurvedic Pre-Consultation & Triage Platform  
+> Ministry of Ayush • SIH26047
 
-## Run frontend and backend in one Docker container
+---
 
-The Docker image builds the React frontend and serves it, along with the Express API and Socket.IO endpoint, from one container on port 5000. MongoDB is not included; configure `MONGO_URI` for a reachable MongoDB instance.
+## Quick Start (Local Development)
 
-1. Copy `backend/.env.example` to `backend/.env` and set at least `MONGO_URI` and a `JWT_SECRET` of 32 or more characters. Add any other credentials needed by the features you use.
-2. Start the app from the repository root:
+### 1. Prerequisites & Environment Setup
+- Node.js (v20+)
+- MongoDB instance (local or MongoDB Atlas connection string)
 
-   ```sh
-   docker compose up --build
-   ```
+Copy environment templates:
+```sh
+# Backend config
+cp backend/.env.example backend/.env
+# Set MONGO_URI, JWT_SECRET (32+ chars), and optional GEMINI_API_KEY / BREVO_API_KEY
+```
 
-3. Open `http://localhost:5000`. The API health endpoint is `http://localhost:5000/api/health`.
+### 2. Seed Realistic Demo Data
+Populate pre-verified doctors, patients, ambulances, hospitals, and clinical triage cases:
+```sh
+npm run seed:demo
+```
+*Outputs instant login credentials for Doctor, Patient, Ambulance, and Admin roles.*
 
-Set `CLIENT_ORIGINS` in the environment or `backend/.env` to the browser-facing origin when accessing the app through a different hostname or port. Stop the container with `docker compose down`.
+### 3. Run Both Servers Locally
+Start both backend (Port 5000) and frontend (Port 5173) with a single command from root:
+```sh
+npm run dev
+```
+
+Or run in separate terminal tabs:
+```sh
+# Terminal 1: Backend API & Socket Server (Port 5000)
+npm run dev:backend
+
+# Terminal 2: Frontend Vite App (Port 5173)
+npm run dev:frontend
+```
+
+Open `http://localhost:5173` in your browser.
+
+---
+
+## Docker Deployment (Single Container)
+Builds the React frontend and serves it alongside the Express API and Socket.IO endpoint on port 5000:
+```sh
+docker compose up --build
+```
+Open `http://localhost:5000`.

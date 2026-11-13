@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Phone,
   ShieldAlert,
+  Navigation,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
@@ -95,31 +96,31 @@ export default function AmbulanceDashboardPage() {
     switch (status) {
       case 'dispatched':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-            Dispatched (Pending Acceptance)
+          <span className="badge-amber font-semibold text-xs">
+            Dispatched (Pending Response)
           </span>
         );
       case 'accepted':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-            En Route (Accepted)
+          <span className="badge-blue font-semibold text-xs bg-sky-100 text-sky-800 border-sky-200">
+            En Route to Location
           </span>
         );
       case 'completed':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span className="badge-green font-semibold text-xs">
             Completed
           </span>
         );
       case 'cancelled':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+          <span className="badge font-semibold text-xs bg-slate-100 text-slate-700">
             Cancelled
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">
+          <span className="badge font-semibold text-xs bg-slate-100 text-slate-700">
             {status}
           </span>
         );
@@ -139,19 +140,19 @@ export default function AmbulanceDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card shadow-sm border-slate-200/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-200">
-            <Truck className="w-8 h-8" />
+          <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-200">
+            <Truck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Ambulance Dispatch Command Center
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Emergency Ambulance Dispatch Center
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               {profile ? (
                 <>
-                  Unit: <span className="font-semibold text-slate-700">{profile.vehicleNumber}</span> | Station: <span className="font-semibold text-slate-700">{profile.stationName}</span> | Status: <span className="font-semibold uppercase text-emerald-600">{profile.status || 'available'}</span>
+                  Unit: <span className="font-semibold text-slate-800">{profile.vehicleNumber}</span> · Station: <span className="font-semibold text-slate-800">{profile.stationName}</span> · Status: <span className="font-semibold uppercase text-emerald-700">{profile.status || 'available'}</span>
                 </>
               ) : (
                 `Logged in as: ${user?.name} (${user?.role})`
@@ -163,81 +164,80 @@ export default function AmbulanceDashboardPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={fetchDispatches}
-            className="btn-ghost px-4 py-2 text-sm flex items-center gap-2 border border-slate-200"
+            className="btn-secondary px-3.5 py-2 text-xs font-semibold flex items-center gap-2"
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh Runs
           </button>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-red-600" />
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-red-600" />
             Active Emergency Dispatches ({activeDispatches.length})
           </h2>
         </div>
 
         {activeDispatches.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-            <p className="text-lg font-medium text-slate-700">No pending emergency dispatches</p>
-            <p className="text-sm text-slate-400 mt-1">
-              Your unit is on standby. Incoming SOS alerts will appear here in real-time.
+          <div className="card border-slate-200 p-12 text-center text-slate-500 bg-white">
+            <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+            <p className="text-base font-semibold text-slate-800">No active emergency dispatches</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Your unit is on standby. High-risk triage dispatches will stream here in real time.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeDispatches.map((dispatch) => (
               <div
                 key={dispatch._id}
-                className="bg-white rounded-2xl border-2 border-red-200 shadow-sm p-6 space-y-4 relative overflow-hidden"
+                className="card border-red-200 shadow-md p-6 space-y-4 relative overflow-hidden bg-white"
               >
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500" />
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-600" />
 
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-700">
-                      <AlertTriangle className="w-3.5 h-3.5" /> High Risk Case
+                    <span className="badge-red font-bold text-[11px] uppercase tracking-wider inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Critical Red Alert
                     </span>
-                    <h3 className="text-lg font-bold text-slate-900 mt-2">
+                    <h3 className="text-base font-bold text-slate-900 mt-1.5">
                       Dispatch #{dispatch._id.slice(-6).toUpperCase()}
                     </h3>
                   </div>
                   {getStatusBadge(dispatch.status)}
                 </div>
 
-                <div className="space-y-2 text-sm text-slate-600 border-t border-b border-slate-100 py-3">
+                <div className="space-y-2.5 text-xs text-slate-600 border-t border-b border-slate-100 py-3">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span>Dispatched: {new Date(dispatch.createdAt).toLocaleTimeString()}</span>
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Dispatched: <strong className="text-slate-800">{new Date(dispatch.createdAt).toLocaleTimeString()}</strong></span>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-semibold text-slate-700">Patient Location:</span>{' '}
+                      <span className="font-semibold text-slate-800">Patient GPS:</span>{' '}
                       {dispatch.patientLocation?.lat != null && dispatch.patientLocation?.lng != null ? (
                         <span>
-                          {dispatch.patientLocation.lat.toFixed(4)},{' '}
-                          {dispatch.patientLocation.lng.toFixed(4)}{' '}
+                          {dispatch.patientLocation.lat.toFixed(4)}, {dispatch.patientLocation.lng.toFixed(4)}{' '}
                           {dispatch.patientLocation.address && `(${dispatch.patientLocation.address})`}
                         </span>
                       ) : (
-                        <span>Location shared via mobile device</span>
+                        <span>Real-time location stream</span>
                       )}
                     </div>
                   </div>
 
                   {dispatch.hospitalId && (
                     <div className="flex items-start gap-2">
-                      <Building2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                      <Building2 className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-semibold text-slate-700">Target Hospital:</span>{' '}
-                        {dispatch.hospitalId.name || 'Emergency Center'}{' '}
+                        <span className="font-semibold text-slate-800">Target Hospital:</span>{' '}
+                        {dispatch.hospitalId.name || 'AIIMS Emergency Center'}{' '}
                         {dispatch.hospitalId.phone && (
-                          <span className="text-slate-500 text-xs">
+                          <span className="text-slate-500 text-[11px]">
                             (<Phone className="inline w-3 h-3 mr-0.5" />
                             {dispatch.hospitalId.phone})
                           </span>
@@ -247,20 +247,20 @@ export default function AmbulanceDashboardPage() {
                   )}
 
                   {dispatch.notes && (
-                    <p className="text-xs text-slate-500 italic mt-1 bg-slate-50 p-2 rounded-lg">
-                      &ldquo;{dispatch.notes}&rdquo;
+                    <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                      "{dispatch.notes}"
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 pt-1">
                   {dispatch.status === 'dispatched' && (
                     <button
                       onClick={() => handleUpdateStatus(dispatch._id, 'accepted')}
                       disabled={updatingId === dispatch._id}
-                      className="btn-primary flex-1 py-2.5 text-sm bg-blue-600 hover:bg-blue-700"
+                      className="btn-primary flex-1 py-2 text-xs font-semibold"
                     >
-                      {updatingId === dispatch._id ? 'Updating…' : 'Accept Dispatch'}
+                      {updatingId === dispatch._id ? 'Updating…' : 'Accept Dispatch (En Route)'}
                     </button>
                   )}
 
@@ -268,7 +268,7 @@ export default function AmbulanceDashboardPage() {
                     <button
                       onClick={() => handleUpdateStatus(dispatch._id, 'completed')}
                       disabled={updatingId === dispatch._id}
-                      className="btn-primary flex-1 py-2.5 text-sm bg-emerald-600 hover:bg-emerald-700"
+                      className="btn-primary flex-1 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700"
                     >
                       {updatingId === dispatch._id ? 'Updating…' : 'Mark Completed (At Hospital)'}
                     </button>
@@ -277,7 +277,7 @@ export default function AmbulanceDashboardPage() {
                   <button
                     onClick={() => handleUpdateStatus(dispatch._id, 'cancelled')}
                     disabled={updatingId === dispatch._id}
-                    className="btn-ghost px-4 py-2.5 text-sm text-slate-500 hover:text-red-600 border border-slate-200"
+                    className="btn-secondary px-3 py-2 text-xs font-semibold text-slate-600 hover:text-red-600"
                   >
                     Cancel
                   </button>
@@ -289,36 +289,36 @@ export default function AmbulanceDashboardPage() {
       </div>
 
       {pastDispatches.length > 0 && (
-        <div className="space-y-4 pt-6">
-          <h2 className="text-lg font-bold text-slate-700">
-            Past Runs ({pastDispatches.length})
+        <div className="space-y-3 pt-4">
+          <h2 className="text-base font-bold text-slate-800">
+            Completed Dispatches ({pastDispatches.length})
           </h2>
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="card p-0 overflow-hidden border-slate-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
                   <tr>
-                    <th className="px-6 py-3">Dispatch ID</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Hospital</th>
-                    <th className="px-6 py-3">Dispatched At</th>
-                    <th className="px-6 py-3">Updated At</th>
+                    <th className="px-5 py-3">Dispatch Ref</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Assigned Hospital</th>
+                    <th className="px-5 py-3">Dispatch Time</th>
+                    <th className="px-5 py-3">Resolution Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {pastDispatches.map((d) => (
                     <tr key={d._id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 font-mono font-medium text-slate-900">
+                      <td className="px-5 py-3 font-mono font-medium text-slate-900">
                         #{d._id.slice(-6).toUpperCase()}
                       </td>
-                      <td className="px-6 py-4">{getStatusBadge(d.status)}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">{getStatusBadge(d.status)}</td>
+                      <td className="px-5 py-3 font-medium text-slate-800">
                         {d.hospitalId?.name || 'Emergency Center'}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3 text-slate-400">
                         {new Date(d.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3 text-slate-400">
                         {new Date(d.updatedAt).toLocaleString()}
                       </td>
                     </tr>

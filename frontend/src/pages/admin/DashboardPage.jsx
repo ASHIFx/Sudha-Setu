@@ -9,6 +9,7 @@ import {
   AlertCircle,
   RefreshCw,
   Plus,
+  UserCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
@@ -43,7 +44,7 @@ export default function AdminDashboardPage() {
     try {
       const { data } = await api.get('/admin/telemetry');
       setTelemetry(data);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load telemetry');
     }
   }, []);
@@ -52,7 +53,7 @@ export default function AdminDashboardPage() {
     try {
       const { data } = await api.get('/admin/doctors');
       setDoctors(data.doctors || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load doctors list');
     }
   }, []);
@@ -61,7 +62,7 @@ export default function AdminDashboardPage() {
     try {
       const { data } = await api.get('/admin/ambulances');
       setAmbulances(data.ambulances || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load ambulances list');
     }
   }, []);
@@ -70,7 +71,7 @@ export default function AdminDashboardPage() {
     try {
       const { data } = await api.get('/admin/users');
       setUsers(data.users || []);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load users list');
     }
   }, []);
@@ -171,26 +172,26 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card shadow-sm border-slate-200/80 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-lg shadow-brand-100">
-            <Shield className="w-8 h-8" />
+          <div className="w-12 h-12 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-lg shadow-brand-100">
+            <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              National Health Admin Dashboard
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              National Health Admin & Telemetry
             </h1>
-            <p className="text-sm text-slate-500">
-              Ministry of Ayush • Clinical verification, fleet dispatch, user governance & telemetry
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Ministry of Ayush • Practitioner verification, fleet allocation, and clinical telemetry
             </p>
           </div>
         </div>
 
         <button
           onClick={refreshAll}
-          className="btn-ghost px-4 py-2 text-sm flex items-center gap-2 border border-slate-200"
+          className="btn-secondary px-3.5 py-2 text-xs font-semibold flex items-center gap-2"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
           Refresh Live Data
         </button>
       </div>
@@ -207,16 +208,16 @@ export default function AdminDashboardPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === tab.id
                   ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  : 'text-slate-600 hover:bg-slate-100 bg-white border border-slate-200'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {tab.label}
               {tab.id === 'doctors' && doctors.filter((d) => !d.verified).length > 0 && (
-                <span className="ml-1.5 px-2 py-0.5 rounded-full text-xs bg-amber-400 text-amber-950 font-bold">
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400 text-amber-950 font-bold">
                   {doctors.filter((d) => !d.verified).length}
                 </span>
               )}
@@ -228,9 +229,9 @@ export default function AdminDashboardPage() {
       {activeTab === 'telemetry' && telemetry && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="card p-5 border-l-4 border-l-red-500">
+            <div className="card p-5 border-l-4 border-l-red-500 bg-white">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Emergency & High Risk Cases
+                Emergency / High Risk Cases
               </span>
               <div className="text-3xl font-extrabold text-red-600 mt-2">
                 {telemetry.casesByDangerLevel?.high ?? 0}
@@ -238,27 +239,27 @@ export default function AdminDashboardPage() {
               <p className="text-xs text-slate-500 mt-1">Requires immediate clinical attention</p>
             </div>
 
-            <div className="card p-5 border-l-4 border-l-amber-500">
+            <div className="card p-5 border-l-4 border-l-amber-500 bg-white">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Medium Risk Cases
               </span>
               <div className="text-3xl font-extrabold text-amber-600 mt-2">
                 {telemetry.casesByDangerLevel?.medium ?? 0}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Under doctor triage / queued</p>
+              <p className="text-xs text-slate-500 mt-1">Under doctor triage / OPD queue</p>
             </div>
 
-            <div className="card p-5 border-l-4 border-l-emerald-500">
+            <div className="card p-5 border-l-4 border-l-emerald-500 bg-white">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Low Risk / Self-Care
+                Low Risk (Self-Care)
               </span>
               <div className="text-3xl font-extrabold text-emerald-600 mt-2">
                 {telemetry.casesByDangerLevel?.low ?? 0}
               </div>
-              <p className="text-xs text-slate-500 mt-1">Ayurvedic dietary & lifestyle guidance</p>
+              <p className="text-xs text-slate-500 mt-1">Dietary & lifestyle guidance</p>
             </div>
 
-            <div className="card p-5 border-l-4 border-l-brand-500">
+            <div className="card p-5 border-l-4 border-l-brand-600 bg-white">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Active Ayush KB Rules
               </span>
@@ -270,18 +271,18 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card p-6 space-y-4">
-              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                <Activity className="w-5 h-5 text-brand-600" />
+            <div className="card p-6 space-y-4 bg-white border-slate-200">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Activity className="w-4 h-4 text-brand-600" />
                 Case Status Distribution
               </h3>
               <div className="space-y-2">
                 {Object.entries(telemetry.casesByStatus || {}).map(([st, count]) => (
-                  <div key={st} className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100">
+                  <div key={st} className="flex items-center justify-between text-xs py-2 border-b border-slate-100 last:border-0">
                     <span className="font-medium text-slate-600 capitalize">
                       {st.replace(/_/g, ' ')}
                     </span>
-                    <span className="font-bold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                    <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full">
                       {count}
                     </span>
                   </div>
@@ -289,34 +290,34 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="card p-6 space-y-4">
-              <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                <Stethoscope className="w-5 h-5 text-brand-600" />
+            <div className="card p-6 space-y-4 bg-white border-slate-200">
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-brand-600" />
                 Doctor Verification Status
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                     <div>
-                      <p className="font-semibold text-emerald-900">Verified Practitioners</p>
-                      <p className="text-xs text-emerald-700">Authorised to prescribe medicine</p>
+                      <p className="font-semibold text-emerald-900 text-xs">Verified Practitioners</p>
+                      <p className="text-[11px] text-emerald-700">Authorised for clinical prescriptions</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-black text-emerald-800">
+                  <span className="text-xl font-extrabold text-emerald-800">
                     {telemetry.doctors?.verified ?? 0}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-50 border border-amber-200">
                   <div className="flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-600" />
                     <div>
-                      <p className="font-semibold text-amber-900">Pending Verification</p>
-                      <p className="text-xs text-amber-700">Awaiting Ayush Council credentials check</p>
+                      <p className="font-semibold text-amber-900 text-xs">Pending Verification</p>
+                      <p className="text-[11px] text-amber-700">Awaiting credentials review</p>
                     </div>
                   </div>
-                  <span className="text-2xl font-black text-amber-800">
+                  <span className="text-xl font-extrabold text-amber-800">
                     {telemetry.doctors?.unverified ?? 0}
                   </span>
                 </div>
@@ -338,64 +339,64 @@ export default function AdminDashboardPage() {
       {activeTab === 'doctors' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               Registered Doctors ({doctors.length})
             </h2>
             <button
               onClick={() => setShowDoctorModal(true)}
-              className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+              className="btn-primary px-3.5 py-1.5 text-xs flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> Add Doctor Profile
+              <Plus className="w-3.5 h-3.5" /> Add Doctor Profile
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="card p-0 overflow-hidden border-slate-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
                   <tr>
-                    <th className="px-6 py-3">Doctor</th>
-                    <th className="px-6 py-3">Reg. Number</th>
-                    <th className="px-6 py-3">Specialization</th>
-                    <th className="px-6 py-3">Experience</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3 text-right">Action</th>
+                    <th className="px-5 py-3">Doctor</th>
+                    <th className="px-5 py-3">Registration Number</th>
+                    <th className="px-5 py-3">Specialization</th>
+                    <th className="px-5 py-3">Experience</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3 text-right">Verification Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {doctors.map((doc) => (
                     <tr key={doc._id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">{doc.userId?.name || 'Unknown'}</div>
-                        <div className="text-xs text-slate-400">{doc.userId?.email}</div>
+                      <td className="px-5 py-3">
+                        <div className="font-semibold text-slate-900">{doc.userId?.name || 'Unknown'}</div>
+                        <div className="text-[11px] text-slate-400">{doc.userId?.email}</div>
                       </td>
-                      <td className="px-6 py-4 font-mono font-medium text-slate-700">
+                      <td className="px-5 py-3 font-mono font-medium text-slate-700">
                         {doc.medicalRegistrationNumber}
                       </td>
-                      <td className="px-6 py-4 text-slate-700">{doc.specialization}</td>
-                      <td className="px-6 py-4">{doc.yearsOfExperience} yrs</td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3 text-slate-700">{doc.specialization}</td>
+                      <td className="px-5 py-3">{doc.yearsOfExperience} yrs</td>
+                      <td className="px-5 py-3">
                         {doc.verified ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
-                            <CheckCircle className="w-3.5 h-3.5" /> Verified
+                          <span className="badge-green text-[11px] gap-1">
+                            <CheckCircle className="w-3 h-3" /> Verified
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                            <AlertCircle className="w-3.5 h-3.5" /> Pending
+                          <span className="badge-amber text-[11px] gap-1">
+                            <AlertCircle className="w-3 h-3" /> Pending Review
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-5 py-3 text-right">
                         {!doc.verified ? (
                           <button
                             onClick={() => handleVerifyDoctor(doc._id)}
                             disabled={actionLoading === doc._id}
-                            className="btn-primary px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700"
+                            className="btn-primary px-2.5 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700"
                           >
                             {actionLoading === doc._id ? 'Verifying…' : 'Approve & Verify'}
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400 font-medium">Verified</span>
+                          <span className="text-[11px] text-slate-400 font-medium">Verified ✓</span>
                         )}
                       </td>
                     </tr>
@@ -403,7 +404,7 @@ export default function AdminDashboardPage() {
                   {doctors.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                        No doctors found.
+                        No doctors registered in the system.
                       </td>
                     </tr>
                   )}
@@ -417,44 +418,44 @@ export default function AdminDashboardPage() {
       {activeTab === 'ambulances' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               Registered Ambulance Fleet ({ambulances.length})
             </h2>
             <button
               onClick={() => setShowAmbulanceModal(true)}
-              className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+              className="btn-primary px-3.5 py-1.5 text-xs flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> Register Ambulance Unit
+              <Plus className="w-3.5 h-3.5" /> Register Ambulance Unit
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="card p-0 overflow-hidden border-slate-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
                   <tr>
-                    <th className="px-6 py-3">Vehicle Number</th>
-                    <th className="px-6 py-3">Station</th>
-                    <th className="px-6 py-3">Service Provider</th>
-                    <th className="px-6 py-3">Driver / Operator</th>
-                    <th className="px-6 py-3">Status</th>
+                    <th className="px-5 py-3">Vehicle Number</th>
+                    <th className="px-5 py-3">Station Base</th>
+                    <th className="px-5 py-3">Service Provider</th>
+                    <th className="px-5 py-3">Driver / Operator</th>
+                    <th className="px-5 py-3">Operational Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {ambulances.map((amb) => (
                     <tr key={amb._id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 font-mono font-bold text-slate-900">
+                      <td className="px-5 py-3 font-mono font-bold text-slate-900">
                         {amb.vehicleNumber}
                       </td>
-                      <td className="px-6 py-4 text-slate-700">{amb.stationName}</td>
-                      <td className="px-6 py-4 text-slate-600">{amb.serviceProvider || 'National Emergency'}</td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-800">{amb.userId?.name || 'Unknown'}</div>
-                        <div className="text-xs text-slate-400">{amb.userId?.phone || amb.userId?.email}</div>
+                      <td className="px-5 py-3 text-slate-700">{amb.stationName}</td>
+                      <td className="px-5 py-3 text-slate-600">{amb.serviceProvider || 'National Health Mission'}</td>
+                      <td className="px-5 py-3">
+                        <div className="font-semibold text-slate-800">{amb.userId?.name || 'Unknown'}</div>
+                        <div className="text-[11px] text-slate-400">{amb.userId?.phone || amb.userId?.email}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         <span
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${
+                          className={`px-2 py-0.5 text-[11px] font-bold rounded-full uppercase ${
                             amb.status === 'dispatched' || amb.status === 'busy'
                               ? 'bg-amber-100 text-amber-800'
                               : 'bg-emerald-100 text-emerald-800'
@@ -482,46 +483,46 @@ export default function AdminDashboardPage() {
       {activeTab === 'users' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
-              User Accounts ({users.length})
+            <h2 className="text-base font-bold text-slate-900">
+              User Accounts & Role Governance ({users.length})
             </h2>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="card p-0 overflow-hidden border-slate-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-semibold text-slate-500">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500">
                   <tr>
-                    <th className="px-6 py-3">User</th>
-                    <th className="px-6 py-3">Phone</th>
-                    <th className="px-6 py-3">Current Role</th>
-                    <th className="px-6 py-3">Registered</th>
-                    <th className="px-6 py-3 text-right">Role Actions</th>
+                    <th className="px-5 py-3">User</th>
+                    <th className="px-5 py-3">Phone</th>
+                    <th className="px-5 py-3">Current Role</th>
+                    <th className="px-5 py-3">Registered Date</th>
+                    <th className="px-5 py-3 text-right">Role Management</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {users.map((u) => (
                     <tr key={u._id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">{u.name}</div>
-                        <div className="text-xs text-slate-400">{u.email}</div>
+                      <td className="px-5 py-3">
+                        <div className="font-semibold text-slate-900">{u.name}</div>
+                        <div className="text-[11px] text-slate-400">{u.email}</div>
                       </td>
-                      <td className="px-6 py-4">{u.phone || '—'}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-700 capitalize">
+                      <td className="px-5 py-3">{u.phone || '—'}</td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 text-slate-700 capitalize border border-slate-200/60">
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-500">
+                      <td className="px-5 py-3 text-slate-400 text-xs">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           {u.role !== 'admin' && (
                             <button
                               onClick={() => handleUpdateRole(u._id, 'admin')}
                               disabled={actionLoading === u._id}
-                              className="btn-ghost px-2.5 py-1 text-xs border border-slate-200 hover:bg-brand-50 hover:text-brand-700"
+                              className="btn-secondary px-2 py-1 text-[11px] font-semibold hover:border-brand-500 hover:text-brand-700"
                             >
                               Make Admin
                             </button>
@@ -530,7 +531,7 @@ export default function AdminDashboardPage() {
                             <button
                               onClick={() => handleUpdateRole(u._id, 'support')}
                               disabled={actionLoading === u._id}
-                              className="btn-ghost px-2.5 py-1 text-xs border border-slate-200 hover:bg-slate-100"
+                              className="btn-secondary px-2 py-1 text-[11px] font-semibold"
                             >
                               Make Support
                             </button>
@@ -547,14 +548,14 @@ export default function AdminDashboardPage() {
       )}
 
       {showDoctorModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-xl font-bold text-slate-900">Add Doctor Profile</h3>
-            <form onSubmit={handleCreateDoctor} className="space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900">Add Doctor Profile</h3>
+            <form onSubmit={handleCreateDoctor} className="space-y-3 text-xs">
               <div>
-                <label className="label">Select User</label>
+                <label className="label text-xs">Select User Account</label>
                 <select
-                  className="input"
+                  className="input text-xs py-2"
                   value={doctorForm.userId}
                   onChange={(e) => setDoctorForm({ ...doctorForm, userId: e.target.value })}
                   required
@@ -571,10 +572,10 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Specialization</label>
+                <label className="label text-xs">Specialization</label>
                 <input
                   type="text"
-                  className="input"
+                  className="input text-xs py-2"
                   placeholder="e.g. Kayachikitsa (Internal Medicine)"
                   value={doctorForm.specialization}
                   onChange={(e) =>
@@ -585,10 +586,10 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Medical Registration Number</label>
+                <label className="label text-xs">Medical Registration Number</label>
                 <input
                   type="text"
-                  className="input"
+                  className="input text-xs py-2"
                   placeholder="e.g. AYUSH-DOC-12345"
                   value={doctorForm.medicalRegistrationNumber}
                   onChange={(e) =>
@@ -602,11 +603,11 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Years of Experience</label>
+                <label className="label text-xs">Years of Experience</label>
                 <input
                   type="number"
                   min="0"
-                  className="input"
+                  className="input text-xs py-2"
                   value={doctorForm.yearsOfExperience}
                   onChange={(e) =>
                     setDoctorForm({
@@ -617,18 +618,18 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowDoctorModal(false)}
-                  className="btn-ghost flex-1 py-2 text-sm border border-slate-200"
+                  className="btn-secondary flex-1 py-2 text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'create-doctor'}
-                  className="btn-primary flex-1 py-2 text-sm"
+                  className="btn-primary flex-1 py-2 text-xs font-semibold"
                 >
                   {actionLoading === 'create-doctor' ? 'Creating…' : 'Create Profile'}
                 </button>
@@ -639,14 +640,14 @@ export default function AdminDashboardPage() {
       )}
 
       {showAmbulanceModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-xl font-bold text-slate-900">Register Ambulance Unit</h3>
-            <form onSubmit={handleCreateAmbulance} className="space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900">Register Ambulance Unit</h3>
+            <form onSubmit={handleCreateAmbulance} className="space-y-3 text-xs">
               <div>
-                <label className="label">Select Assigned Driver / User</label>
+                <label className="label text-xs">Select Assigned Driver / Operator Account</label>
                 <select
-                  className="input"
+                  className="input text-xs py-2"
                   value={ambulanceForm.userId}
                   onChange={(e) => setAmbulanceForm({ ...ambulanceForm, userId: e.target.value })}
                   required
@@ -663,10 +664,10 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Vehicle Registration Number</label>
+                <label className="label text-xs">Vehicle Registration Number</label>
                 <input
                   type="text"
-                  className="input font-mono"
+                  className="input text-xs py-2 font-mono"
                   placeholder="e.g. DL-01-AB-1234"
                   value={ambulanceForm.vehicleNumber}
                   onChange={(e) =>
@@ -677,10 +678,10 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Station / Base Location</label>
+                <label className="label text-xs">Station / Base Location</label>
                 <input
                   type="text"
-                  className="input"
+                  className="input text-xs py-2"
                   placeholder="e.g. AIIMS Base Station, New Delhi"
                   value={ambulanceForm.stationName}
                   onChange={(e) =>
@@ -691,10 +692,10 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="label">Service Provider / Agency</label>
+                <label className="label text-xs">Service Provider / Agency</label>
                 <input
                   type="text"
-                  className="input"
+                  className="input text-xs py-2"
                   placeholder="e.g. National Health Mission 108"
                   value={ambulanceForm.serviceProvider}
                   onChange={(e) =>
@@ -703,18 +704,18 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAmbulanceModal(false)}
-                  className="btn-ghost flex-1 py-2 text-sm border border-slate-200"
+                  className="btn-secondary flex-1 py-2 text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading === 'create-ambulance'}
-                  className="btn-primary flex-1 py-2 text-sm"
+                  className="btn-primary flex-1 py-2 text-xs font-semibold"
                 >
                   {actionLoading === 'create-ambulance' ? 'Registering…' : 'Register Unit'}
                 </button>

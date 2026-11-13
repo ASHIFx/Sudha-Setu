@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Loader2, ShieldCheck, RefreshCw, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 import { setUser } from '../../store/authSlice.js';
@@ -50,8 +50,16 @@ export default function VerifyOtpPage() {
     try {
       const { data } = await api.post('/auth/verify-otp', { email: email.trim(), code });
       dispatch(setUser(data.user));
-      toast.success('Email verified! Welcome to Sudha Setu.');
-      navigate('/intake');
+      toast.success('Email verified successfully!');
+      if (data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (data.user.role === 'ambulance') {
+        navigate('/ambulance/dashboard');
+      } else if (['doctor', 'support'].includes(data.user.role)) {
+        navigate('/doctor/dashboard');
+      } else {
+        navigate('/intake');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message ?? 'Invalid or expired code.');
     } finally {
@@ -65,7 +73,7 @@ export default function VerifyOtpPage() {
     try {
       const { data } = await api.post('/auth/resend-otp', { email: email.trim() });
       toast.success(
-        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new OTP has been sent if the email is valid.'
+        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new OTP has been sent if the email is registered.'
       );
     } catch (err) {
       toast.error(err.response?.data?.message ?? 'Could not resend the OTP.');
@@ -75,43 +83,42 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-brand-100 flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck className="w-8 h-8 text-brand-600" />
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50/50">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 mb-3 shadow-sm">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <h1 className="text-4xl font-black text-slate-900">Verify Email</h1>
-          <p className="mt-2 text-slate-500">
-            Enter the 6-digit code sent to{' '}
-            <span className="font-semibold text-slate-700">{email || 'your email'}</span>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Verify Your Email</h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Enter the 6-digit code sent to <span className="font-semibold text-slate-700">{email || 'your email'}</span>
           </p>
           {developmentOtp && (
-            <p className="mt-2 text-sm font-semibold text-amber-700">
-              Email delivery failed locally. Development OTP: {developmentOtp}
-            </p>
+            <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800">
+              Dev Mode OTP: <span className="font-mono text-sm tracking-wider">{developmentOtp}</span>
+            </div>
           )}
         </div>
 
-        <div className="card shadow-md">
+        <div className="card shadow-lg border-slate-200/80 p-8 space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {!prefillEmail && (
               <div>
-                <label className="label text-base">Email Address</label>
+                <label className="label text-sm">Registered Email</label>
                 <input
                   type="email"
-                  className="input text-base py-4"
+                  required
+                  className="input text-sm py-2.5"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  required
                 />
               </div>
             )}
 
             <div>
-              <label className="label text-base text-center block mb-4">Verification Code</label>
-              <div className="flex gap-3 justify-center" onPaste={handlePaste}>
+              <label className="label text-sm text-center block mb-3">6-Digit Verification Code</label>
+              <div className="flex justify-center gap-2" onPaste={handlePaste}>
                 {otp.map((digit, i) => (
                   <input
                     key={i}
@@ -122,31 +129,33 @@ export default function VerifyOtpPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-colors bg-white"
-                    aria-label={`OTP digit ${i + 1}`}
+                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all shadow-sm"
                   />
                 ))}
               </div>
             </div>
 
-            <button type="submit" disabled={loading || otp.join('').length < 6} className="btn-primary w-full py-4 text-lg">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-              {loading ? 'Verifying…' : 'Verify Code'}
+            <button
+              type="submit"
+              disabled={loading || otp.join('').length < 6}
+              className="btn-primary w-full py-3 text-base shadow-sm"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {loading ? 'Verifying…' : 'Verify & Enter'}
             </button>
           </form>
 
-          <div className="mt-5 flex flex-col items-center gap-3">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+            <span>Didn't get the code?</span>
             <button
+              type="button"
               onClick={handleResend}
               disabled={resending}
-              className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium"
+              className="text-brand-600 font-semibold hover:text-brand-700 flex items-center gap-1 disabled:opacity-50"
             >
-              {resending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              <RefreshCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
               Resend Code
             </button>
-            <Link to="/login" className="text-sm text-slate-400 hover:text-slate-600">
-              Back to login
-            </Link>
           </div>
         </div>
       </div>
