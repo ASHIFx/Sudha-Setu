@@ -5,19 +5,19 @@ const TIER_META = {
   low: {
     title: 'Tier 1: Low Risk (Green) — Home Care Regimen',
     subtitle: 'Symptoms appear mild. Follow dietary balance and restorative home wellness guidance below.',
-    headerClass: 'bg-emerald-50/70 border-emerald-200/80 text-emerald-900',
+    headerClass: 'bg-emerald-950/40 border-b border-emerald-500/20 text-emerald-300',
     badgeClass: 'badge-green',
   },
   medium: {
     title: 'Tier 2: Medium Risk (Amber) — Physician OPD Review',
     subtitle: 'Symptoms require clinical review. Your case is queued for physician evaluation.',
-    headerClass: 'bg-amber-50/70 border-amber-200/80 text-amber-900',
+    headerClass: 'bg-amber-950/40 border-b border-amber-500/20 text-amber-300',
     badgeClass: 'badge-amber',
   },
   high: {
     title: 'Tier 3: High Risk (Red) — Emergency Protocol Active',
     subtitle: 'Critical markers detected. Nearest emergency hospital identified and ambulance dispatch alerted.',
-    headerClass: 'bg-rose-50/70 border-rose-200/80 text-rose-900',
+    headerClass: 'bg-rose-950/40 border-b border-rose-500/20 text-rose-300',
     badgeClass: 'badge-red',
   },
 };
@@ -50,7 +50,7 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
       <div className={`p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${meta.headerClass}`}>
         <div>
           <span className={meta.badgeClass}>
@@ -63,10 +63,10 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
           <button
             type="button"
             onClick={handleToggleSpeech}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1.5 self-start sm:self-auto ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer ${
               speaking
-                ? 'bg-rose-600 text-white border-rose-600 animate-pulse'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
             }`}
           >
             {speaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
@@ -77,17 +77,17 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
 
       <div className="p-5 space-y-4 text-xs">
         {requiresHumanReview && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-medium">
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-200 font-medium">
             Clinical Notice: A physician will review your case record and provide formal follow-up instructions.
           </div>
         )}
 
         {advice.ayurvedicDietaryNotes?.length > 0 && (
           <div className="space-y-1.5">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
               Nutritional & Dietary Recommendations (Ahara)
             </h4>
-            <ul className="space-y-1 text-slate-700 pl-4 list-disc">
+            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
               {advice.ayurvedicDietaryNotes.map((note, i) => (
                 <li key={i} className="leading-relaxed">{note}</li>
               ))}
@@ -96,11 +96,11 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
         )}
 
         {advice.safeRemedies?.length > 0 && (
-          <div className="space-y-1.5 pt-2 border-t border-slate-100">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+          <div className="space-y-1.5 pt-2 border-t border-slate-800">
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
               Safe Home Remedies & Herbal Infusions
             </h4>
-            <ul className="space-y-1 text-slate-700 pl-4 list-disc">
+            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
               {advice.safeRemedies.map((remedy, i) => (
                 <li key={i} className="leading-relaxed">{remedy}</li>
               ))}
@@ -109,11 +109,11 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
         )}
 
         {advice.generalTips?.length > 0 && (
-          <div className="space-y-1.5 pt-2 border-t border-slate-100">
-            <h4 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
+          <div className="space-y-1.5 pt-2 border-t border-slate-800">
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
               General Wellness Guidelines
             </h4>
-            <ul className="space-y-1 text-slate-700 pl-4 list-disc">
+            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
               {advice.generalTips.map((tip, i) => (
                 <li key={i} className="leading-relaxed">{tip}</li>
               ))}
@@ -121,9 +121,9 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
           </div>
         )}
 
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-          <span>Case Identifier: <span className="font-mono text-slate-700 font-bold">{caseId || 'INTAKE-TEMP'}</span></span>
-          <span className="capitalize">Status: <strong className="text-slate-700">{status?.replace(/_/g, ' ') || 'Pending'}</strong></span>
+        <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span>Case Identifier: <span className="font-mono text-emerald-400 font-bold">{caseId || 'INTAKE-TEMP'}</span></span>
+          <span className="capitalize">Status: <strong className="text-slate-200">{status?.replace(/_/g, ' ') || 'Pending'}</strong></span>
         </div>
       </div>
     </div>

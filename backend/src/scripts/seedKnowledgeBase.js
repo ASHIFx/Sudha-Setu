@@ -8,7 +8,7 @@ import Doctor from "../models/Doctor.js";
 import CaseSheet from "../models/CaseSheet.js";
 
 const SEED_DOCTOR = {
-  name: "Dr. Seed Verifier (Ayush Board)",
+  name: "Dr. Seed Verifier (Medical Board)",
   email: "seed.doctor@sudhasetu.internal",
   phone: "9000000001",
   password: "ChangeThisSeedPassword123",

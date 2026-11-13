@@ -1,7 +1,7 @@
 const DANGER_BADGE = {
-  high: 'bg-rose-50 text-rose-800 border-rose-200',
-  medium: 'bg-amber-50 text-amber-800 border-amber-200',
-  low: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  high: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
+  medium: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  low: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
 };
 
 const STATUS_LABEL = {
@@ -23,33 +23,33 @@ export default function CaseRow({ caseDoc, onOpen, index }) {
 
   return (
     <tr
-      className={`hover:bg-slate-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
+      className={`hover:bg-slate-800/60 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-slate-900/40' : 'bg-slate-950/40'}`}
       onClick={() => onOpen(caseDoc)}
     >
-      <td className="px-4 py-3">
+      <td className="px-4 py-3.5">
         <div>
-          <p className="font-bold text-slate-900 text-xs">{patient.name ?? 'Anonymous Patient'}</p>
-          <p className="text-[11px] text-slate-400">{patient.phone ?? patient.email ?? 'ID: ' + caseDoc._id.slice(-6)}</p>
+          <p className="font-bold text-white text-xs">{patient.name ?? 'Anonymous Patient'}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{patient.phone ?? patient.email ?? 'ID: ' + caseDoc._id.slice(-6)}</p>
         </div>
       </td>
 
-      <td className="px-4 py-3 hidden sm:table-cell max-w-[240px]">
-        <p className="text-xs text-slate-600 truncate font-normal">{symptomText}</p>
+      <td className="px-4 py-3.5 hidden sm:table-cell max-w-[240px]">
+        <p className="text-xs text-slate-300 truncate font-normal">{symptomText}</p>
       </td>
 
-      <td className="px-4 py-3">
-        <span className={`inline-block px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${DANGER_BADGE[caseDoc.dangerLevel] ?? 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+      <td className="px-4 py-3.5">
+        <span className={`inline-block px-2.5 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${DANGER_BADGE[caseDoc.dangerLevel] ?? 'bg-slate-800 text-slate-300 border-slate-700'}`}>
           {caseDoc.dangerLevel} Risk
         </span>
       </td>
 
-      <td className="px-4 py-3 hidden md:table-cell">
-        <span className="text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+      <td className="px-4 py-3.5 hidden md:table-cell">
+        <span className="text-[11px] font-medium text-slate-300 bg-slate-800/80 border border-slate-700/80 px-2 py-0.5 rounded-md">
           {STATUS_LABEL[caseDoc.status] ?? caseDoc.status}
         </span>
       </td>
 
-      <td className="px-4 py-3 hidden lg:table-cell text-slate-500 text-[11px]">
+      <td className="px-4 py-3.5 hidden lg:table-cell text-slate-400 text-[11px] font-mono">
         {new Date(caseDoc.createdAt).toLocaleString('en-IN', {
           day: 'numeric',
           month: 'short',
@@ -58,13 +58,13 @@ export default function CaseRow({ caseDoc, onOpen, index }) {
         })}
       </td>
 
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3.5 text-right">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpen(caseDoc); }}
-          className="px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-300 rounded hover:bg-slate-100"
+          className="px-3 py-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-lg transition-colors cursor-pointer"
         >
-          Review
+          Review Case
         </button>
       </td>
     </tr>

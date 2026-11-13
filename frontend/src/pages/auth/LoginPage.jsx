@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser } from '../../store/authSlice.js';
 
@@ -50,22 +50,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-[#0B0F19]">
       <div className="w-full max-w-md space-y-5">
-        <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-teal-700">
-            Sudha Setu Portal
-          </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+        <div className="text-center space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Secure Access</span>
+          </div>
+          <h1 className="text-2xl font-black text-white tracking-tight">
             Sign In to Your Console
           </h1>
         </div>
 
-        <div className="bg-white border border-slate-200/90 rounded-xl p-6 shadow-sm space-y-5">
-          <div className="border-b border-slate-100 pb-3 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span className="font-semibold text-slate-700">Demo Role Quick-Fill:</span>
-              <span>1-Click load</span>
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-5">
+          <div className="border-b border-slate-800 pb-3 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-semibold text-slate-300">Demo Role Quick-Fill:</span>
+              <span className="text-emerald-400 font-mono text-[11px]">1-Click load</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {DEMO_PRESETS.map((p) => (
@@ -73,7 +74,7 @@ export default function LoginPage() {
                   key={p.role}
                   type="button"
                   onClick={() => handleSelectDemo(p)}
-                  className="px-2.5 py-1.5 text-xs font-medium bg-slate-50 hover:bg-teal-50 hover:text-teal-900 text-slate-700 rounded border border-slate-200/80 text-left transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-medium bg-slate-800/80 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/30 text-slate-300 rounded-lg border border-slate-700/60 text-left transition-colors"
                 >
                   {p.label}
                 </button>
@@ -103,7 +104,7 @@ export default function LoginPage() {
                 <label htmlFor="password" className="label !mb-0">
                   Password
                 </label>
-                <Link to="/forgot-password" className="text-xs text-teal-700 font-medium hover:underline">
+                <Link to="/forgot-password" className="text-xs text-emerald-400 font-medium hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -121,7 +122,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -139,10 +140,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="pt-3 border-t border-slate-800 text-center text-xs text-slate-400">
             <span>New patient? </span>
-            <Link to="/register" className="text-teal-700 font-semibold hover:underline">
-              Register here
+            <Link to="/register" className="text-emerald-400 font-semibold hover:underline">
+              Create an account
             </Link>
           </div>
         </div>

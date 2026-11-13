@@ -98,7 +98,7 @@ export const formatGroundingContext = (retrievedRules) => {
     return '';
   }
 
-  let context = '=== RETRIEVED AYUSH CLINICAL KNOWLEDGE BASE ENTRIES ===\n';
+  let context = '=== RETRIEVED CLINICAL KNOWLEDGE BASE ENTRIES ===\n';
   retrievedRules.forEach((rule, idx) => {
     context += `\n[ENTRY #${idx + 1}]`;
     context += `\nRULE_ID: ${rule._id}`;

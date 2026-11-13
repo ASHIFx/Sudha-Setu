@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Phone, MapPin, X } from 'lucide-react';
+import { Phone, MapPin, X, AlertTriangle } from 'lucide-react';
 import api from '../../lib/api.js';
 
 export default function SosOverlay({ caseId, onDismiss }) {
@@ -38,44 +38,45 @@ export default function SosOverlay({ caseId, onDismiss }) {
   }, [caseId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-      <div className="bg-red-800 text-white max-w-lg w-full rounded border-2 border-red-500 shadow-2xl p-6 space-y-5 relative">
-        <div className="flex items-start justify-between border-b border-red-700 pb-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+      <div className="bg-gradient-to-b from-rose-950/95 to-slate-950/95 text-white max-w-lg w-full rounded-2xl border-2 border-rose-500/80 shadow-2xl shadow-rose-950/50 p-6 space-y-5 relative">
+        <div className="flex items-start justify-between border-b border-rose-900/60 pb-3">
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest bg-red-950 text-red-200 px-2 py-0.5 rounded">
-              Critical Emergency Alert
-            </span>
-            <h2 className="text-xl font-black mt-1">Tier 3: High Risk Condition Detected</h2>
+            <div className="inline-flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full">
+              <AlertTriangle className="w-3 h-3 text-rose-400" />
+              <span>Critical Emergency Alert</span>
+            </div>
+            <h2 className="text-xl font-black mt-1 text-white">Tier 3: High Risk Condition Detected</h2>
           </div>
           <button
             onClick={onDismiss}
-            className="p-1 rounded text-red-200 hover:text-white hover:bg-red-700 transition-colors"
+            className="p-1 rounded-lg text-rose-300 hover:text-white hover:bg-rose-900/50 transition-colors"
             aria-label="Dismiss SOS overlay"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-xs text-red-100 leading-relaxed">
+        <p className="text-xs text-rose-200 leading-relaxed">
           Critical symptom indicators have been triggered. The platform has initiated automated emergency hospital lookup and vehicle dispatch.
         </p>
 
         {hospital && (
-          <div className="bg-red-900/80 border border-red-700 rounded p-4 text-xs space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-red-100 uppercase tracking-wide text-[11px]">
-              <MapPin className="w-3.5 h-3.5 text-red-300" />
+          <div className="bg-slate-900/80 border border-rose-500/40 rounded-xl p-4 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-rose-300 uppercase tracking-wide text-[11px]">
+              <MapPin className="w-3.5 h-3.5" />
               <span>Assigned Emergency Facility</span>
             </div>
             <div>
               <p className="font-bold text-sm text-white">{hospital.name}</p>
               {hospital.phone && (
-                <p className="text-red-200 text-xs mt-0.5">Emergency Desk: {hospital.phone}</p>
+                <p className="text-rose-300 text-xs mt-0.5">Emergency Desk: {hospital.phone}</p>
               )}
             </div>
             {hospital.phone && (
               <a
                 href={`tel:${hospital.phone}`}
-                className="inline-flex items-center gap-2 bg-white text-red-900 font-bold px-3 py-1.5 rounded text-xs hover:bg-red-50 transition-colors mt-1"
+                className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors mt-1 shadow-md shadow-rose-600/30"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Call Hospital Direct</span>
@@ -84,14 +85,14 @@ export default function SosOverlay({ caseId, onDismiss }) {
           </div>
         )}
 
-        <div className="bg-red-900/80 border border-red-700 rounded p-4 text-xs space-y-1">
-          <p className="font-bold text-red-100 uppercase tracking-wide text-[11px]">Ambulance Dispatch State</p>
+        <div className="bg-slate-900/80 border border-rose-500/40 rounded-xl p-4 text-xs space-y-1">
+          <p className="font-bold text-rose-300 uppercase tracking-wide text-[11px]">Ambulance Dispatch State</p>
           {dispatched ? (
             <p className="text-white font-medium">
-              Ambulance dispatch record created. Status: <strong className="uppercase font-bold underline">{dispatchInfo?.status || 'dispatched'}</strong>
+              Ambulance dispatch record created. Status: <strong className="uppercase font-bold text-rose-400 underline">{dispatchInfo?.status || 'dispatched'}</strong>
             </p>
           ) : (
-            <p className="text-red-200">
+            <p className="text-rose-300">
               Connecting to nearest emergency ambulance unit... ({countdown}s)
             </p>
           )}
@@ -100,7 +101,7 @@ export default function SosOverlay({ caseId, onDismiss }) {
         <div className="pt-2">
           <a
             href="tel:112"
-            className="w-full flex items-center justify-center gap-2 bg-white text-red-900 font-black text-sm py-3 rounded hover:bg-red-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-sm py-3 rounded-xl transition-all shadow-lg shadow-rose-600/40 cursor-pointer"
           >
             <Phone className="w-4 h-4" />
             <span>Call 112 (National Emergency Helpline)</span>
@@ -108,7 +109,7 @@ export default function SosOverlay({ caseId, onDismiss }) {
         </div>
 
         {caseId && (
-          <div className="text-[10px] text-red-300 text-center font-mono">
+          <div className="text-[10px] text-rose-400 text-center font-mono">
             Emergency Case Identifier: {caseId}
           </div>
         )}

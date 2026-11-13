@@ -75,8 +75,8 @@ const DEMO_DOCTORS = [
       emailVerified: true,
     },
     profile: {
-      specialization: 'Kayachikitsa (Ayurvedic Internal Medicine)',
-      medicalRegistrationNumber: 'AYUSH-DEL-2018-0421',
+      specialization: 'Kayachikitsa (Internal Medicine)',
+      medicalRegistrationNumber: 'REG-DEL-2018-0421',
       yearsOfExperience: 9,
       verified: true,
     },
@@ -93,7 +93,7 @@ const DEMO_DOCTORS = [
     },
     profile: {
       specialization: 'Panchakarma & Rasayana Therapy',
-      medicalRegistrationNumber: 'AYUSH-KER-2016-0819',
+      medicalRegistrationNumber: 'REG-KER-2016-0819',
       yearsOfExperience: 12,
       verified: true,
     },
@@ -109,8 +109,8 @@ const DEMO_DOCTORS = [
       emailVerified: true,
     },
     profile: {
-      specialization: 'Dravyaguna & Herbology',
-      medicalRegistrationNumber: 'AYUSH-UP-2023-1102',
+      specialization: 'Dravyaguna & Clinical Pharmacology',
+      medicalRegistrationNumber: 'REG-UP-2023-1102',
       yearsOfExperience: 3,
       verified: false,
     },
@@ -147,15 +147,15 @@ const DEMO_AMBULANCES = [
     },
     profile: {
       vehicleNumber: 'DL-02-EM-1082',
-      stationName: 'South Delhi AIIA Base Station',
-      serviceProvider: 'Delhi State Ayush Ambulance Wing',
+      stationName: 'South Delhi Base Station',
+      serviceProvider: 'Delhi Emergency Ambulance Fleet',
       status: 'available',
     },
   },
 ];
 
 const DEMO_ADMIN = {
-  name: 'National Ayush Director',
+  name: 'Platform Director',
   email: 'admin@demo.sudhasetu.in',
   phone: '9800011000',
   password: DEMO_PASSWORD,
@@ -360,6 +360,7 @@ export const seedDemo = async () => {
 
     await disconnectDB();
     console.log('✅ Demo seeding complete. Database connection closed.');
+    process.exit(0);
   } catch (err) {
     console.error('❌ Demo seeding failed:', err.message);
     process.exit(1);

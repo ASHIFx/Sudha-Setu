@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Mic, MicOff, Send, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Send, RotateCcw, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 import useSpeech from '../../hooks/useSpeech.js';
@@ -14,12 +14,13 @@ const LANGUAGE_OPTIONS = [
 
 function AudioCaptureBar({ listening, onClick, disabled }) {
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200/80 rounded-xl">
+    <div className="flex items-center justify-between p-4 bg-slate-950/80 border border-slate-800/90 rounded-xl">
       <div>
-        <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-          {listening ? 'Voice Recording in Progress' : 'Voice Input Transcription'}
+        <p className="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+          {listening && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />}
+          <span>{listening ? 'Voice Recording in Progress' : 'Voice Input Transcription'}</span>
         </p>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-400 mt-0.5">
           {listening
             ? 'Speaking now. Tap Stop Recording when finished.'
             : 'Tap the mic to describe your symptoms in Hindi or English.'}
@@ -29,10 +30,10 @@ function AudioCaptureBar({ listening, onClick, disabled }) {
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
           listening
-            ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
-            : 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm'
+            ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse shadow-lg shadow-rose-600/30'
+            : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md shadow-emerald-500/20'
         }`}
       >
         {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -115,33 +116,37 @@ export default function IntakePage() {
   };
 
   return (
-    <>
+    <div className="bg-[#0B0F19] min-h-[calc(100vh-4rem)]">
       {sosActive && result && (
         <SosOverlay caseId={result.caseId} onDismiss={() => setSosActive(false)} />
       )}
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-1">
+              <Activity className="w-3.5 h-3.5" />
+              <span>Interactive Assessment</span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Patient Health Intake & Triage
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Patient: <span className="font-semibold text-slate-800">{user?.name || 'Guest'}</span>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Patient: <span className="font-semibold text-slate-200">{user?.name || 'Guest'}</span>
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Language:</span>
+            <span className="text-xs font-semibold text-slate-400">Language:</span>
             {LANGUAGE_OPTIONS.map((l) => (
               <button
                 key={l.value}
                 type="button"
                 onClick={() => { setLang(l.value); reset(); setTextInput(''); }}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors ${
+                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
                   lang === l.value
-                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30'
+                    : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700/80'
                 }`}
               >
                 {l.label}
@@ -155,7 +160,7 @@ export default function IntakePage() {
             {supported ? (
               <AudioCaptureBar listening={listening} onClick={toggle} disabled={submitting} />
             ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg">
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs rounded-lg">
                 Voice input is not supported in this browser environment. Please describe symptoms using the text console below.
               </div>
             )}
@@ -165,7 +170,7 @@ export default function IntakePage() {
                 <label htmlFor="symptom-text" className="label !mb-0">
                   Describe Symptoms / लक्षण विवरण
                 </label>
-                <span className="text-[11px] text-slate-400">{textInput.length} / 5000 chars</span>
+                <span className="text-[11px] text-slate-500">{textInput.length} / 5000 chars</span>
               </div>
               <textarea
                 id="symptom-text"
@@ -239,6 +244,6 @@ export default function IntakePage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

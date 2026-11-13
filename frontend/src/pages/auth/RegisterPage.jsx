@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 
@@ -40,18 +40,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-[#0B0F19]">
       <div className="w-full max-w-md space-y-5">
-        <div className="text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-teal-700">
-            Sudha Setu Portal
-          </p>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+        <div className="text-center space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Patient Onboarding</span>
+          </div>
+          <h1 className="text-2xl font-black text-white tracking-tight">
             Create Patient Account
           </h1>
         </div>
 
-        <div className="bg-white border border-slate-200/90 rounded-xl p-6 shadow-sm space-y-4">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="label">
@@ -104,7 +105,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -117,7 +118,7 @@ export default function RegisterPage() {
                 <label htmlFor="abhaId" className="label !mb-0">
                   Health ID / ABHA Number
                 </label>
-                <span className="text-[11px] text-slate-400">Optional</span>
+                <span className="text-[11px] text-slate-500">Optional</span>
               </div>
               <input
                 id="abhaId"
@@ -127,7 +128,7 @@ export default function RegisterPage() {
                 onChange={update('abhaId')}
                 placeholder="XX-XXXX-XXXX-XXXX"
               />
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-500 mt-1">
                 Links clinical records across participating medical centers.
               </p>
             </div>
@@ -142,9 +143,9 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="pt-3 border-t border-slate-800 text-center text-xs text-slate-400">
             <span>Already have an account? </span>
-            <Link to="/login" className="text-teal-700 font-semibold hover:underline">
+            <Link to="/login" className="text-emerald-400 font-semibold hover:underline">
               Sign In
             </Link>
           </div>

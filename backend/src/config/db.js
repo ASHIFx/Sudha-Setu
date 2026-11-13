@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 let connectionPromise = null;
 let reconnectTimer = null;
+let isShuttingDown = false;
 
 export const connectDB = async () => {
   if (connectionPromise) return connectionPromise;
@@ -15,7 +16,7 @@ export const connectDB = async () => {
 
   connectionPromise = mongoose
     .connect(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
       maxPoolSize: 20,
       minPoolSize: 2,
     })
@@ -36,9 +37,9 @@ export const connectDB = async () => {
 };
 
 export const startAutoReconnect = () => {
-  if (reconnectTimer) return;
+  if (reconnectTimer || isShuttingDown) return;
   reconnectTimer = setInterval(async () => {
-    if (mongoose.connection.readyState === 0) {
+    if (mongoose.connection.readyState === 0 && !isShuttingDown) {
       try {
         await connectDB();
       } catch (err) {
@@ -49,8 +50,10 @@ export const startAutoReconnect = () => {
 };
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('[db] disconnected');
-  startAutoReconnect();
+  if (!isShuttingDown) {
+    console.warn('[db] disconnected');
+    startAutoReconnect();
+  }
 });
 
 mongoose.connection.on('error', (err) => {
@@ -58,6 +61,7 @@ mongoose.connection.on('error', (err) => {
 });
 
 export const disconnectDB = async () => {
+  isShuttingDown = true;
   if (reconnectTimer) {
     clearInterval(reconnectTimer);
     reconnectTimer = null;
