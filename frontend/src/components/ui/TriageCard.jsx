@@ -1,23 +1,23 @@
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, CheckCircle2 } from 'lucide-react';
 import useSpeech from '../../hooks/useSpeech.js';
 
 const TIER_META = {
   low: {
-    title: 'Tier 1: Low Risk (Green) — Home Care Regimen',
-    subtitle: 'Symptoms appear mild. Follow dietary balance and restorative home wellness guidance below.',
-    headerClass: 'bg-emerald-950/40 border-b border-emerald-500/20 text-emerald-300',
+    title: 'Home Care & Rest (Mild)',
+    subtitle: 'Your symptoms appear mild and safe to manage with restorative home care and healthy food habits.',
+    headerClass: 'bg-emerald-950/50 border-b border-emerald-500/30 text-emerald-300',
     badgeClass: 'badge-green',
   },
   medium: {
-    title: 'Tier 2: Medium Risk (Amber) — Physician OPD Review',
-    subtitle: 'Symptoms require clinical review. Your case is queued for physician evaluation.',
-    headerClass: 'bg-amber-950/40 border-b border-amber-500/20 text-amber-300',
+    title: 'Doctor OPD Review Recommended (Moderate)',
+    subtitle: 'Your symptoms require evaluation by a certified physician. Your case is ready for doctor review.',
+    headerClass: 'bg-amber-950/50 border-b border-amber-500/30 text-amber-300',
     badgeClass: 'badge-amber',
   },
   high: {
-    title: 'Tier 3: High Risk (Red) — Emergency Protocol Active',
-    subtitle: 'Critical markers detected. Nearest emergency hospital identified and ambulance dispatch alerted.',
-    headerClass: 'bg-rose-950/40 border-b border-rose-500/20 text-rose-300',
+    title: 'Emergency Care Needed (Urgent)',
+    subtitle: 'Urgent markers detected. Emergency hospital identified and ambulance fleet dispatch alerted.',
+    headerClass: 'bg-rose-950/50 border-b border-rose-500/30 text-rose-300',
     badgeClass: 'badge-red',
   },
 };
@@ -30,10 +30,10 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
   const buildSpeechText = () => {
     const parts = [meta.title, meta.subtitle];
     if (advice.generalTips?.length) {
-      parts.push('General Advice: ' + advice.generalTips.join('. '));
+      parts.push('Helpful Advice: ' + advice.generalTips.join('. '));
     }
     if (advice.ayurvedicDietaryNotes?.length) {
-      parts.push('Dietary Guidance: ' + advice.ayurvedicDietaryNotes.join('. '));
+      parts.push('Food Guidance: ' + advice.ayurvedicDietaryNotes.join('. '));
     }
     if (advice.safeRemedies?.length) {
       parts.push('Safe Home Remedies: ' + advice.safeRemedies.join('. '));
@@ -50,7 +50,7 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
+    <div className="bg-[#062016]/95 border border-[#124731] rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
       <div className={`p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${meta.headerClass}`}>
         <div>
           <span className={meta.badgeClass}>
@@ -63,31 +63,45 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
           <button
             type="button"
             onClick={handleToggleSpeech}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer ${
               speaking
                 ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
-                : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
+                : 'bg-[#04150E] text-emerald-300 border-[#124731] hover:bg-[#0B2E20]'
             }`}
           >
-            {speaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            <span>{speaking ? 'Stop Audio' : 'Read Aloud'}</span>
+            {speaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+            <span>{speaking ? 'Stop Audio' : 'Listen (Soft Voice)'}</span>
           </button>
         )}
       </div>
 
       <div className="p-5 space-y-4 text-xs">
         {requiresHumanReview && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-200 font-medium">
-            Clinical Notice: A physician will review your case record and provide formal follow-up instructions.
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 font-medium">
+            Doctor Notice: A doctor has been notified and will review your symptoms for personalized follow-up.
+          </div>
+        )}
+
+        {advice.generalTips?.length > 0 && (
+          <div className="space-y-1.5">
+            <h4 className="font-bold text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Helpful Daily Guidance</span>
+            </h4>
+            <ul className="space-y-1 text-emerald-100/80 pl-4 list-disc">
+              {advice.generalTips.map((tip, i) => (
+                <li key={i} className="leading-relaxed">{tip}</li>
+              ))}
+            </ul>
           </div>
         )}
 
         {advice.ayurvedicDietaryNotes?.length > 0 && (
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 pt-2 border-t border-[#124731]">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
-              Nutritional & Dietary Recommendations (Ahara)
+              Food & Dietary Balance (Ahara)
             </h4>
-            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
+            <ul className="space-y-1 text-emerald-100/80 pl-4 list-disc">
               {advice.ayurvedicDietaryNotes.map((note, i) => (
                 <li key={i} className="leading-relaxed">{note}</li>
               ))}
@@ -96,35 +110,17 @@ export default function TriageCard({ dangerLevel, verifiedAdvice, requiresHumanR
         )}
 
         {advice.safeRemedies?.length > 0 && (
-          <div className="space-y-1.5 pt-2 border-t border-slate-800">
+          <div className="space-y-1.5 pt-2 border-t border-[#124731]">
             <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
-              Safe Home Remedies & Herbal Infusions
+              Safe Home Remedies & Herbs
             </h4>
-            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
-              {advice.safeRemedies.map((remedy, i) => (
-                <li key={i} className="leading-relaxed">{remedy}</li>
+            <ul className="space-y-1 text-emerald-100/80 pl-4 list-disc">
+              {advice.safeRemedies.map((rem, i) => (
+                <li key={i} className="leading-relaxed">{rem}</li>
               ))}
             </ul>
           </div>
         )}
-
-        {advice.generalTips?.length > 0 && (
-          <div className="space-y-1.5 pt-2 border-t border-slate-800">
-            <h4 className="font-bold text-white uppercase tracking-wider text-[11px]">
-              General Wellness Guidelines
-            </h4>
-            <ul className="space-y-1 text-slate-300 pl-4 list-disc">
-              {advice.generalTips.map((tip, i) => (
-                <li key={i} className="leading-relaxed">{tip}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-          <span>Case Identifier: <span className="font-mono text-emerald-400 font-bold">{caseId || 'INTAKE-TEMP'}</span></span>
-          <span className="capitalize">Status: <strong className="text-slate-200">{status?.replace(/_/g, ' ') || 'Pending'}</strong></span>
-        </div>
       </div>
     </div>
   );

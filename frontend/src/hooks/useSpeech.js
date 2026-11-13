@@ -8,10 +8,20 @@ const getSpeechRecognitionAPI = () =>
 const getSpeechSynthesisAPI = () =>
   typeof window === 'undefined' ? null : window.speechSynthesis || null;
 
+export const SUPPORTED_LANGUAGES = [
+  { code: 'hi', locale: 'hi-IN', label: 'हिन्दी (Hindi)', greeting: 'नमस्ते, आप कैसा महसूस कर रहे हैं?' },
+  { code: 'en', locale: 'en-IN', label: 'English (India)', greeting: 'Hello, how can I assist you with your health today?' },
+  { code: 'bn', locale: 'bn-IN', label: 'বাংলা (Bengali)', greeting: 'নমস্কার, আজ আপনি কেমন বোধ করছেন?' },
+  { code: 'mr', locale: 'mr-IN', label: 'मराठी (Marathi)', greeting: 'नमस्कार, आज तुम्हाला कसे वाटत आहे?' },
+  { code: 'ta', locale: 'ta-IN', label: 'தமிழ் (Tamil)', greeting: 'வணக்கம், இன்று உங்கள் உடல்நலம் எவ்வாறு உள்ளது?' },
+];
+
 export const detectLanguage = (text = '') => {
   if (!text) return 'hi-IN';
-  const devanagariRegex = /[\u0900-\u097F]/;
-  return devanagariRegex.test(text) ? 'hi-IN' : 'en-IN';
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN';
+  if (/[\u0980-\u09FF]/.test(text)) return 'bn-IN';
+  if (/[\u0B80-\u0BFF]/.test(text)) return 'ta-IN';
+  return 'en-IN';
 };
 
 export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
@@ -23,6 +33,7 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
     () => typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window
   );
   const [transcript, setTranscript] = useState('');
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   const recogRef = useRef(null);
   const finalTranscriptRef = useRef('');
@@ -32,8 +43,24 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
     if (lang) setCurrentLang(lang);
   }, [lang]);
 
+  useEffect(() => {
+    const synth = getSpeechSynthesisAPI();
+    if (!synth) return;
+    const updateVoices = () => {
+      const v = synth.getVoices() || [];
+      if (v.length > 0) setAvailableVoices(v);
+    };
+    updateVoices();
+    synth.onvoiceschanged = updateVoices;
+    return () => {
+      synth.onvoiceschanged = null;
+    };
+  }, []);
+
   const stop = useCallback(() => {
-    recogRef.current?.stop();
+    try {
+      recogRef.current?.stop();
+    } catch {}
     setListening(false);
   }, []);
 
@@ -42,7 +69,9 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
     if (!SpeechRecognitionAPI) return;
 
     if (recogRef.current) {
-      recogRef.current.abort();
+      try {
+        recogRef.current.abort();
+      } catch {}
     }
 
     finalTranscriptRef.current = '';
@@ -76,8 +105,12 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
       setListening(false);
     };
 
-    recog.start();
-    recogRef.current = recog;
+    try {
+      recog.start();
+      recogRef.current = recog;
+    } catch (err) {
+      console.warn('[speech] recog.start failed:', err);
+    }
   }, [currentLang, onResult]);
 
   const toggle = useCallback(() => {
@@ -111,25 +144,28 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
 
       const utterance = new window.SpeechSynthesisUtterance(cleanText);
       utterance.lang = targetLang;
-      utterance.rate = options.rate ?? 0.9;
-      utterance.pitch = options.pitch ?? 1.02;
-      utterance.volume = options.volume ?? 0.88;
+      utterance.rate = options.rate ?? 0.88;
+      utterance.pitch = options.pitch ?? 1.08;
+      utterance.volume = options.volume ?? 0.85;
 
-      const voices = synth.getVoices?.() || [];
-      const langPrefix = targetLang.split('-')[0];
+      const voices = availableVoices.length > 0 ? availableVoices : synth.getVoices?.() || [];
+      const langPrefix = targetLang.split('-')[0].toLowerCase();
       const langMatches = voices.filter(
-        (v) => v.lang === targetLang || v.lang.startsWith(langPrefix)
+        (v) => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.toLowerCase().startsWith(langPrefix)
       );
 
-      const softVoice =
-        langMatches.find((v) => /natural|soft|swara|neerja|google|female|zira|samantha/i.test(v.name)) ||
-        langMatches.find((v) => !/male|david|mark/i.test(v.name)) ||
+      const femalePatterns = /swara|heera|neerja|kalpana|geeta|shruti|ananya|priya|zira|samantha|victoria|karen|jenny|aria|female|girl|google.*female/i;
+      const malePatterns = /male|david|mark|ravi|george|madhav|hemant|guy|stefan/i;
+
+      const softFemaleVoice =
+        langMatches.find((v) => femalePatterns.test(v.name) && !malePatterns.test(v.name)) ||
+        langMatches.find((v) => !malePatterns.test(v.name)) ||
+        voices.find((v) => femalePatterns.test(v.name) && !malePatterns.test(v.name)) ||
         langMatches[0] ||
-        voices.find((v) => /natural|female/i.test(v.name)) ||
         voices[0];
 
-      if (softVoice) {
-        utterance.voice = softVoice;
+      if (softFemaleVoice) {
+        utterance.voice = softFemaleVoice;
       }
 
       utterance.onstart = () => {
@@ -151,12 +187,12 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
       currentUtteranceRef.current = utterance;
       synth.speak(utterance);
     },
-    [currentLang]
+    [availableVoices, currentLang]
   );
 
   useEffect(() => {
     return () => {
-      recogRef.current?.abort();
+      recogRef.current?.abort?.();
       const synth = getSpeechSynthesisAPI();
       if (synth) synth.cancel();
     };

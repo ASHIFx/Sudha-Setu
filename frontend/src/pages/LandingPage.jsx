@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Sparkles, Stethoscope, Building2, HeartPulse, ArrowRight } from 'lucide-react';
+import { Search, Sparkles, Stethoscope, Building2, HeartPulse, ArrowRight, Leaf } from 'lucide-react';
 
 export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +45,7 @@ export default function LandingPage() {
 
           <div className="max-w-3xl space-y-6 relative z-10">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0B2E20] border border-[#1A5C40] text-emerald-300 text-xs font-semibold tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Leaf className="w-3.5 h-3.5 text-emerald-400" />
               <span>AYURVEDA × TECHNOLOGY × A HEALTHIER TOMORROW</span>
             </div>
 

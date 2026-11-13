@@ -5,7 +5,7 @@ export const LOW_CONFIDENCE_THRESHOLD = 0.55;
 
 const LEVEL_RANK = { low: 1, medium: 2, high: 3 };
 
-const GREETING_PATTERN = /^(hi|hii|hiii|hello|hey|heyy|namaste|namaskar|pranam|good\s*(morning|evening|afternoon)|hola|test|testing|kya\s*haal|kaise\s*ho)[\s!.,?]*$/i;
+const GREETING_PATTERN = /^(hi+|hello|hey+|namaste|namaskar|pranam|good\s*(morning|evening|afternoon)|hola|test|testing|kya\s*haal|kaise\s*ho|how\s*are\s*you)(\s+(there|doctor|doc|ji|bhai|sir|mam|friend|charak|vaani))?[\s!.,?]*$/i;
 
 const NEGATIONS = ['no', 'not', 'never', 'without', 'denies', 'nahi', 'nahin', 'नहीं', 'नही'];
 
@@ -14,28 +14,110 @@ const hasNegation = (text, idx) => {
   return NEGATIONS.some((n) => prefix.includes(n));
 };
 
-const defaultSelfCareAdvice = () => ({
-  generalTips: [
-    'Hello! Sudha Setu health triage is active and ready to assist you.',
-    'Please describe your symptoms, duration, and severity in Hindi or English.',
-  ],
-  ayurvedicDietaryNotes: [
-    'Drink boiled warm water throughout the day to support digestive fire.',
-    'Favor freshly prepared, light meals suited to your current appetite.',
-  ],
-  safeRemedies: [
-    'Mention symptoms (e.g. fever for 2 days, mild headache) for detailed clinical evaluation.',
-  ],
-});
+const GREETING_RESPONSES = {
+  hi: {
+    greetingTitle: 'नमस्ते! यह कोई बीमारी या समस्या नहीं है',
+    message: 'नमस्ते! मैं आपकी चरक वाणी स्वास्थ्य सहायिका हूँ। यह एक सामान्य अभिवादन लग रहा है, कोई रोग या बीमारी नहीं। आज आप कैसा महसूस कर रहे हैं? यदि आपको कोई शारीरिक परेशानी या लक्षण हैं (जैसे सिरदर्द, बुखार, या पेट में दर्द), तो कृपया मुझे बताएं।',
+    generalTips: [
+      'नमस्ते! आपकी चरक वाणी स्वास्थ्य सहायिका तैयार है।',
+      'कृपया अपने लक्षण (जैसे बुखार, सिरदर्द, या पेट में गैस) बताएं।',
+    ],
+    ayurvedicDietaryNotes: [
+      'दिनभर गुनगुना पानी पिएं जिससे पाचन अग्नि संतुलित रहे।',
+      'हल्का, ताजा और सुपाच्य भोजन ग्रहण करें।',
+    ],
+    safeRemedies: [
+      'अपने लक्षण विस्तार से बताएं ताकि सही आयुर्वेदिक सलाह दी जा सके।',
+    ],
+  },
+  bn: {
+    greetingTitle: 'নমস্কার! এটি কোনো রোগ বা অসুস্থতা নয়',
+    message: 'নমস্কার! আমি চরক বাণী, আপনার স্বাস্থ্য সহকারী। এটি কোনো রোগ নয়, একটি সুন্দর শুভেচ্ছা! আপনি আজ কেমন বোধ করছেন? যদি আপনার কোনো শারীরিক সমস্যা বা উপসর্গ থাকে (যেমন জ্বর, পেটে অস্বস্তি বা মাথা ব্যথা), দয়া করে জানান।',
+    generalTips: [
+      'নমস্কার! চরক বাণী স্বাস্থ্য পরামর্শের জন্য প্রস্তুত।',
+      'আপনার শারীরিক লক্ষণ বা অস্বস্তির কথা জানান।',
+    ],
+    ayurvedicDietaryNotes: [
+      'হজম ভালো রাখার জন্য সারা দিন কুসুম গরম জল পান করুন।',
+      'তাজা ও সহজে হজম হয় এমন পুষ্টিকর খাবার খান।',
+    ],
+    safeRemedies: [
+      'আপনার উপসর্গ বিস্তারিত লিখুন বা বলুন।',
+    ],
+  },
+  mr: {
+    greetingTitle: 'नमस्कार! हे आजारपण नाही, एक अभिवादन आहे',
+    message: 'नमस्कार! मी चरक वाणी, तुमची आरोग्य सहाय्यक. हे एक सामान्य अभिवादन आहे, कोणताही आजार नाही! आज तुम्हाला कसे वाटत आहे? जर तुम्हाला काही शारीरिक त्रास किंवा लक्षणे असतील (जसे डोकेदुखी, ताप किंवा अपचन), तर कृपया सांगा.',
+    generalTips: [
+      'नमस्कार! चरक वाणी सहाय्यक आपल्या मदतीसाठी तत्पर आहे.',
+      'कृपया तुमची लक्षणे (उदा. ताप, खोकला, अंगदुखी) सांगा.',
+    ],
+    ayurvedicDietaryNotes: [
+      'पचनक्रिया सुरळीत राहण्यासाठी दिवसभर कोमट पाणी प्या.',
+      'हलका आणि पचायला सोपा असलेला ताजा आहार घ्या.',
+    ],
+    safeRemedies: [
+      'योग्य मार्गदर्शनासाठी तुमचे लक्षण सविस्तर सांगा.',
+    ],
+  },
+  ta: {
+    greetingTitle: 'வணக்கம்! இது எந்த நோயும் இல்லை, ஒரு வாழ்த்து மட்டுமே',
+    message: 'வணக்கம்! நான் சரக் வாணி, உங்கள் நல உதவியாளர். இது ஒரு நலம் விசாரிக்கும் வாழ்த்து மட்டுமே, நோய் அல்ல! இன்று நீங்கள் எப்படி உணர்கிறீர்கள்? உங்களுக்கு ஏதேனும் உடல் உபாதைகள் அல்லது அறிகுறிகள் இருந்தால் (தலைவலி, காய்ச்சல் போன்றவை) தயவுசெய்து கூறவும்.',
+    generalTips: [
+      'வணக்கம்! சரக் வாணி உங்கள் நலனுக்கு உதவ தயார்.',
+      'உங்கள் அறிகுறிகளை (காய்ச்சல், வலி போன்றவை) விவரிக்கவும்.',
+    ],
+    ayurvedicDietaryNotes: [
+      'செரிமானத்தை காக்க நாள் முழுவதும் மிதமான வெந்நீர் அருந்தவும்.',
+      'எளிதில் செரிக்கும் சத்தான உணவுகளை உண்ணுங்கள்.',
+    ],
+    safeRemedies: [
+      'சரியான ஆலோசனைக்கு உங்கள் அறிகுறிகளை விவரமாக பகிரவும்.',
+    ],
+  },
+  en: {
+    greetingTitle: 'Hello! This is a friendly greeting, not a disease',
+    message: 'Hello! I am Charak Vaani, your health companion. That sounds like a friendly greeting rather than a medical symptom! How are you feeling today? Please describe any symptoms, how long you have had them, or any discomfort (for example: "I have had a mild headache since yesterday").',
+    generalTips: [
+      'Hello! Charak Vaani health assistant is active and ready to assist you.',
+      'Please describe how you feel or any symptoms you are experiencing.',
+    ],
+    ayurvedicDietaryNotes: [
+      'Sip warm boiled water throughout the day to support your digestive fire.',
+      'Enjoy freshly prepared, light meals suited to your current appetite.',
+    ],
+    safeRemedies: [
+      'Mention your symptoms for personalized Ayurvedic guidance.',
+    ],
+  },
+};
+
+const defaultSelfCareAdvice = (lang = 'en') => {
+  const selected = GREETING_RESPONSES[lang] || GREETING_RESPONSES.en;
+  return {
+    generalTips: selected.generalTips,
+    ayurvedicDietaryNotes: selected.ayurvedicDietaryNotes,
+    safeRemedies: selected.safeRemedies,
+  };
+};
 
 export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   const text = String(patientText || '').trim();
+  const normalizedLang = ['hi', 'bn', 'mr', 'ta'].includes(languageUsed?.toLowerCase()) ? languageUsed.toLowerCase() : 'en';
 
   if (!text || GREETING_PATTERN.test(text)) {
+    const greetingData = GREETING_RESPONSES[normalizedLang] || GREETING_RESPONSES.en;
     return {
       dangerLevel: 'low',
-      confidenceScore: 0.95,
-      verifiedAdvice: defaultSelfCareAdvice(),
+      confidenceScore: 0.98,
+      isGreeting: true,
+      greetingTitle: greetingData.greetingTitle,
+      greetingMessage: greetingData.message,
+      verifiedAdvice: {
+        generalTips: greetingData.generalTips,
+        ayurvedicDietaryNotes: greetingData.ayurvedicDietaryNotes,
+        safeRemedies: greetingData.safeRemedies,
+      },
       matchedKeywords: [],
       matchedRuleIds: [],
       requiresHumanReview: false,
@@ -64,6 +146,26 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   if (matches.length === 0) {
     const llmResult = await assessSymptomWithLLM(text, languageUsed);
     if (llmResult) {
+      if (llmResult.isGreeting) {
+        const greetingData = GREETING_RESPONSES[normalizedLang] || GREETING_RESPONSES.en;
+        return {
+          dangerLevel: 'low',
+          confidenceScore: 0.98,
+          isGreeting: true,
+          greetingTitle: greetingData.greetingTitle,
+          greetingMessage: greetingData.message,
+          verifiedAdvice: {
+            generalTips: greetingData.generalTips,
+            ayurvedicDietaryNotes: greetingData.ayurvedicDietaryNotes,
+            safeRemedies: greetingData.safeRemedies,
+          },
+          matchedKeywords: [],
+          matchedRuleIds: [],
+          requiresHumanReview: false,
+          reason: 'conversational_greeting',
+        };
+      }
+
       return {
         dangerLevel: llmResult.dangerLevel,
         confidenceScore: llmResult.confidenceScore,
@@ -82,7 +184,7 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     return {
       dangerLevel: danger,
       confidenceScore: 0.75,
-      verifiedAdvice: defaultSelfCareAdvice(),
+      verifiedAdvice: defaultSelfCareAdvice(normalizedLang),
       matchedKeywords: [],
       matchedRuleIds: [],
       requiresHumanReview: danger !== 'low',

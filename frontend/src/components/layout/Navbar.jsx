@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { LogOut, User, Globe, Sparkles, ChevronDown } from 'lucide-react';
+import { LogOut, User, Globe, Sparkles, ChevronDown, Leaf } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { logoutUser } from '../../store/authSlice.js';
 
@@ -28,7 +28,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 p-[1.5px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform flex items-center justify-center">
               <div className="w-full h-full bg-[#04150E] rounded-full flex items-center justify-center">
-                <span className="text-emerald-300 font-serif font-black text-sm">ॐ</span>
+                <Leaf className="w-4 h-4 text-emerald-400" />
               </div>
             </div>
             <div>
@@ -110,21 +110,23 @@ export default function Navbar() {
             </button>
 
             {showLangMenu && (
-              <div className="absolute right-0 mt-1 w-32 bg-[#062016] border border-[#124731] rounded-xl shadow-2xl py-1 z-50">
-                <button
-                  type="button"
-                  onClick={() => { setLang('English'); setShowLangMenu(false); }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setLang('हिन्दी'); setShowLangMenu(false); }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
-                >
-                  हिन्दी (Hindi)
-                </button>
+              <div className="absolute right-0 mt-1 w-36 bg-[#062016] border border-[#124731] rounded-xl shadow-2xl py-1 z-50">
+                {[
+                  { label: 'English', code: 'en' },
+                  { label: 'हिन्दी (Hindi)', code: 'hi' },
+                  { label: 'বাংলা (Bengali)', code: 'bn' },
+                  { label: 'मराठी (Marathi)', code: 'mr' },
+                  { label: 'தமிழ் (Tamil)', code: 'ta' },
+                ].map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() => { setLang(item.label.split(' ')[0]); setShowLangMenu(false); }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>

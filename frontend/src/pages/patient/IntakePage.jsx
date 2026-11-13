@@ -1,63 +1,28 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
-import { Mic, MicOff, Send, RotateCcw, Activity } from 'lucide-react';
+import { Mic, MicOff, Send, RotateCcw, Sparkles, Volume2, VolumeX, MessageSquare, Heart, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
-import useSpeech from '../../hooks/useSpeech.js';
+import useSpeech, { SUPPORTED_LANGUAGES } from '../../hooks/useSpeech.js';
 import TriageCard from '../../components/ui/TriageCard.jsx';
 import SosOverlay from '../../components/ui/SosOverlay.jsx';
 
-const LANGUAGE_OPTIONS = [
-  { value: 'hi-IN', label: 'हिन्दी (Hindi)', api: 'hi' },
-  { value: 'en-IN', label: 'English (India)', api: 'en' },
+const SAMPLE_SCENARIOS = [
+  { label: '👋 Say "Hii" / "Hello"', text: 'Hii there! How are you doing today?' },
+  { label: '🍵 Acidity / Indigestion', text: 'I have had continuous stomach burning and acidity after eating heavy dinner.' },
+  { label: '🩺 Moderate Fever & Cough', text: 'Persistent fever for 3 days with dry cough, throat pain, and mild body ache.' },
+  { label: '🚨 Chest Pain (Emergency)', text: 'Severe crushing chest pain radiating to left arm with difficulty breathing.' },
 ];
-
-const QUICK_SCENARIOS = [
-  { label: '👋 Greeting ("Hii")', text: 'Hii there! How does this health triage assistant work?' },
-  { label: '🌿 Low Risk (Digestion)', text: 'Mild indigestion and bloating after eating dinner with slight acidity.' },
-  { label: '🩺 Medium Risk (OPD Fever)', text: 'Continuous high fever for 3 days with severe headache and throat irritation.' },
-  { label: '🚨 High Risk (Emergency SOS)', text: 'Severe crushing chest pain radiating to left arm with extreme shortness of breath.' },
-];
-
-function AudioCaptureBar({ listening, onClick, disabled }) {
-  return (
-    <div className="flex items-center justify-between p-4 bg-slate-950/80 border border-slate-800/90 rounded-xl">
-      <div>
-        <p className="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
-          {listening && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />}
-          <span>{listening ? 'Voice Recording in Progress' : 'Voice Input Transcription'}</span>
-        </p>
-        <p className="text-xs text-slate-400 mt-0.5">
-          {listening
-            ? 'Speaking now. Tap Stop Recording when finished.'
-            : 'Tap the mic to describe your symptoms in Hindi or English.'}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-          listening
-            ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse shadow-lg shadow-rose-600/30'
-            : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md shadow-emerald-500/20'
-        }`}
-      >
-        {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-        <span>{listening ? 'Stop Recording' : 'Start Voice Input'}</span>
-      </button>
-    </div>
-  );
-}
 
 export default function IntakePage() {
   const user = useSelector((s) => s.auth.user);
+  const routeLocation = useLocation();
 
-  const [lang, setLang] = useState(() => {
+  const [selectedLang, setSelectedLang] = useState(() => {
     const pref = user?.languagePreference?.toLowerCase();
-    if (pref === 'en' || pref === 'en-in') return 'en-IN';
-    return 'hi-IN';
+    const found = SUPPORTED_LANGUAGES.find((l) => l.code === pref);
+    return found || SUPPORTED_LANGUAGES[0];
   });
 
   const [textInput, setTextInput] = useState('');
@@ -65,22 +30,21 @@ export default function IntakePage() {
   const [result, setResult] = useState(null);
   const [sosActive, setSosActive] = useState(false);
   const locationRef = useRef(null);
-  const routeLocation = useLocation();
+
+  const onSpeechResult = useCallback((transcript) => {
+    setTextInput(transcript);
+  }, []);
+
+  const { listening, supported, ttsSupported, toggle, reset, speak, stopSpeaking, speaking } = useSpeech({
+    lang: selectedLang.locale,
+    onResult: onSpeechResult,
+  });
 
   useEffect(() => {
     if (routeLocation.state?.prefilledText) {
       setTextInput(routeLocation.state.prefilledText);
     }
   }, [routeLocation.state]);
-
-  const onSpeechResult = useCallback((transcript) => {
-    setTextInput(transcript);
-  }, []);
-
-  const { listening, supported, toggle, reset } = useSpeech({
-    lang,
-    onResult: onSpeechResult,
-  });
 
   const getLocation = () =>
     new Promise((resolve) => {
@@ -92,10 +56,10 @@ export default function IntakePage() {
       );
     });
 
-  const handleSubmit = async () => {
-    const text = textInput.trim();
+  const handleSubmit = async (overrideText) => {
+    const text = (overrideText || textInput).trim();
     if (!text) {
-      toast.error('Please describe your symptoms before submitting.');
+      toast.error('Please describe how you are feeling or speak into the microphone.');
       return;
     }
     setSubmitting(true);
@@ -104,18 +68,20 @@ export default function IntakePage() {
       if (!locationRef.current) {
         locationRef.current = await getLocation();
       }
-      const selectedLang = LANGUAGE_OPTIONS.find((l) => l.value === lang);
       const { data } = await api.post('/cases/intake', {
         patientText: text,
-        languageUsed: selectedLang?.api ?? 'hi',
+        languageUsed: selectedLang.code,
         location: locationRef.current ?? undefined,
       });
       setResult(data);
       if (data.emergency || data.dangerLevel === 'high') {
         setSosActive(true);
       }
+      if (data.isGreeting && data.greetingMessage) {
+        speak(data.greetingMessage, { lang: selectedLang.locale });
+      }
     } catch (err) {
-      const msg = err.response?.data?.message ?? 'Triage assessment failed. Please try again.';
+      const msg = err.response?.data?.message ?? 'Health assessment failed. Please try again.';
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -124,125 +90,249 @@ export default function IntakePage() {
 
   const handleReset = () => {
     reset();
+    stopSpeaking();
     setTextInput('');
     setResult(null);
     setSosActive(false);
     locationRef.current = null;
   };
 
+  const handleLanguageChange = (langObj) => {
+    setSelectedLang(langObj);
+    reset();
+    stopSpeaking();
+    toast.success(`Language changed to ${langObj.label}`);
+  };
+
   return (
-    <div className="bg-[#0B0F19] min-h-[calc(100vh-4rem)]">
+    <div className="bg-[#04150E] min-h-[calc(100vh-4rem)] py-8 text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
       {sosActive && result && (
         <SosOverlay caseId={result.caseId} onDismiss={() => setSosActive(false)} />
       )}
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-1">
-              <Activity className="w-3.5 h-3.5" />
-              <span>Interactive Assessment</span>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
+        <div className="bg-[#062016]/90 border border-[#124731] rounded-2xl p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Charak Vaani • Intelligent Voice Health Guide</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white tracking-tight">
+                How Can I Help Your Health Today?
+              </h1>
+              <p className="text-xs text-emerald-100/70 mt-1">
+                Speak or type in your language. Charak Vaani analyzes symptoms, explains what your body needs, and offers safe wellness advice.
+              </p>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">
-              Patient Health Intake & Triage
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Patient: <span className="font-semibold text-slate-200">{user?.name || 'Guest'}</span>
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400">Language:</span>
-            {LANGUAGE_OPTIONS.map((l) => (
-              <button
-                key={l.value}
-                type="button"
-                onClick={() => { setLang(l.value); reset(); setTextInput(''); }}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
-                  lang === l.value
-                    ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30'
-                    : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700/80'
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
+            <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
+              <span className="text-[11px] font-semibold text-emerald-300">Choose Language / भाषा:</span>
+              <div className="flex flex-wrap gap-1">
+                {SUPPORTED_LANGUAGES.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => handleLanguageChange(l)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                      selectedLang.code === l.code
+                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-600/30'
+                        : 'bg-[#04150E] text-emerald-100/70 border-[#124731] hover:text-white hover:bg-[#0B2E20]'
+                    }`}
+                  >
+                    {l.label.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         {!result && (
-          <div className="card space-y-5">
-            {supported ? (
-              <AudioCaptureBar listening={listening} onClick={toggle} disabled={submitting} />
-            ) : (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs rounded-lg">
-                Voice input is not supported in this browser environment. Please describe symptoms using the text console below.
+          <div className="bg-[#062016]/90 border border-[#124731] rounded-2xl p-6 shadow-xl backdrop-blur-xl space-y-5">
+            <div className="flex items-center justify-between p-4 bg-[#04150E] border border-[#124731] rounded-xl">
+              <div>
+                <p className="text-xs font-bold text-white flex items-center gap-2">
+                  {listening && <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />}
+                  <span>{listening ? `Listening in ${selectedLang.label}…` : `Tap to Speak (${selectedLang.label})`}</span>
+                </p>
+                <p className="text-xs text-emerald-100/60 mt-0.5">
+                  {listening
+                    ? 'Speak clearly into your microphone. Tap stop when finished.'
+                    : 'Describe how you feel, what hurts, or how many days you have had it.'}
+                </p>
               </div>
-            )}
+
+              {supported ? (
+                <button
+                  type="button"
+                  onClick={toggle}
+                  disabled={submitting}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    listening
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse shadow-lg shadow-rose-600/30'
+                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                  }`}
+                >
+                  {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  <span>{listening ? 'Stop Speaking' : 'Start Voice Input'}</span>
+                </button>
+              ) : (
+                <span className="text-xs text-amber-300">Type below</span>
+              )}
+            </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="symptom-text" className="label !mb-0">
-                  Describe Symptoms / लक्षण विवरण
+                <label htmlFor="symptom-input" className="text-xs font-semibold text-emerald-300">
+                  Describe How You Feel / अपनी परेशानी बताएं
                 </label>
-                <span className="text-[11px] text-slate-500">{textInput.length} / 5000 chars</span>
+                <span className="text-[11px] text-emerald-100/50">{textInput.length} / 5000 chars</span>
               </div>
               <textarea
-                id="symptom-text"
-                className="input min-h-[140px] resize-y leading-relaxed"
+                id="symptom-input"
+                className="w-full bg-[#04150E] border border-[#124731] rounded-xl p-3.5 text-xs sm:text-sm text-white placeholder-emerald-100/40 focus:outline-none focus:border-emerald-500/70 min-h-[130px] leading-relaxed transition-colors"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder={
-                  lang === 'hi-IN'
-                    ? 'उदाहरण: मुझे पिछले दो दिनों से तेज बुखार है, सिर में लगातार भारी दर्द है और गले में खराश है...'
-                    : 'e.g. I have had continuous high fever for two days with severe headache and throat irritation...'
+                  selectedLang.code === 'hi'
+                    ? 'उदाहरण: मुझे पिछले दो दिनों से हल्का सिरदर्द है, पेट में गैस बन रही है और थकान महसूस हो रही है...'
+                    : selectedLang.code === 'bn'
+                    ? 'উদাহরণ: গত দুই দিন ধরে আমার হালকা জ্বর এবং মাথা ব্যথা করছে...'
+                    : selectedLang.code === 'mr'
+                    ? 'उदाहरण: मला गेल्या दोन दिवसांपासून डोकेदुखी आणि अपचनाचा त्रास होत आहे...'
+                    : selectedLang.code === 'ta'
+                    ? 'உதாரணம்: எனக்கு கடந்த இரண்டு நாட்களாக லேசான காய்ச்சல் மற்றும் தலைவலி உள்ளது...'
+                    : 'e.g. I have had mild acidity and headache after dinner for 2 days...'
                 }
                 disabled={submitting}
                 maxLength={5000}
               />
+            </div>
 
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-slate-400">Presentation Quick Scenarios:</span>
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_SCENARIOS.map((q, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setTextInput(q.text)}
-                      className="px-2.5 py-1 text-xs bg-slate-800/80 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/40 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
-                    >
-                      {q.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="space-y-2 pt-1">
+              <span className="text-[11px] font-semibold text-emerald-300">Quick Test Examples:</span>
+              <div className="flex flex-wrap gap-2">
+                {SAMPLE_SCENARIOS.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTextInput(s.text);
+                      handleSubmit(s.text);
+                    }}
+                    className="px-2.5 py-1 text-xs bg-[#04150E] hover:bg-[#0B2E20] hover:text-white text-emerald-100/80 rounded-lg border border-[#124731] transition-colors cursor-pointer"
+                  >
+                    {s.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 disabled={submitting || !textInput.trim()}
-                className="btn-primary flex-1 py-2.5 text-xs font-bold"
+                className="flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>{submitting ? 'Analyzing Symptoms…' : 'Submit for Triage'}</span>
+                <Sparkles className="w-4 h-4" />
+                <span>{submitting ? 'Analyzing with Charak Vaani…' : 'Check My Health'}</span>
               </button>
               {textInput && (
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="btn-secondary px-3 py-2 text-xs"
+                  className="px-3.5 py-3 rounded-xl text-xs font-semibold bg-[#04150E] hover:bg-[#0B2E20] text-emerald-300 border border-[#124731] transition-colors cursor-pointer"
                   title="Clear input"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
         )}
 
-        {result && (
+        {result && result.isGreeting && (
+          <div className="bg-[#062016]/95 border-2 border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 relative overflow-hidden animate-in fade-in">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-2xl shrink-0">
+                👋
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-block">
+                  Friendly Greeting • Not a Health Condition
+                </span>
+                <h2 className="text-xl font-serif font-bold text-white">
+                  {result.greetingTitle || 'Hello! That is a friendly greeting, not an illness.'}
+                </h2>
+                <p className="text-sm text-emerald-100/90 leading-relaxed mt-2">
+                  {result.greetingMessage ||
+                    'I am Charak Vaani, your health and wellness assistant. How are you feeling today? If you have any health questions or symptoms, please let me know!'}
+                </p>
+              </div>
+
+              {ttsSupported && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (speaking) stopSpeaking();
+                    else speak(result.greetingMessage || result.greetingTitle, { lang: selectedLang.locale });
+                  }}
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    speaking
+                      ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                      : 'bg-[#04150E] text-emerald-300 border-[#124731] hover:bg-[#0B2E20]'
+                  }`}
+                  title="Listen in soft female voice"
+                >
+                  {speaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
+
+            <div className="p-4 bg-[#04150E] border border-[#124731] rounded-xl space-y-3">
+              <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Want to test Charak Vaani with real health symptoms? Tap an example below:</span>
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  { title: '🍵 Mild Acidity', text: 'I have had continuous stomach burning and acidity after eating heavy dinner.' },
+                  { title: '🩺 3-Day Fever', text: 'Persistent fever for 3 days with dry cough, throat pain, and body ache.' },
+                  { title: '🚨 Crushing Chest Pain', text: 'Severe crushing chest pain radiating to left arm with difficulty breathing.' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTextInput(item.text);
+                      handleSubmit(item.text);
+                    }}
+                    className="p-3 rounded-lg bg-[#062016] border border-[#124731] hover:border-emerald-500/50 text-left transition-colors cursor-pointer group"
+                  >
+                    <span className="text-xs font-bold text-white block group-hover:text-emerald-300">{item.title}</span>
+                    <span className="text-[11px] text-emerald-100/60 line-clamp-2 mt-0.5">{item.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="py-2 px-4 rounded-xl text-xs font-bold bg-[#04150E] hover:bg-[#0B2E20] text-emerald-300 border border-[#124731] flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Start New Check</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {result && !result.isGreeting && (
           <div className="space-y-4">
             <TriageCard
               dangerLevel={result.dangerLevel}
@@ -250,25 +340,26 @@ export default function IntakePage() {
               requiresHumanReview={result.requiresHumanReview}
               status={result.status}
               caseId={result.caseId}
-              lang={lang}
+              lang={selectedLang.locale}
             />
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleReset}
-                className="btn-secondary flex-1 py-2.5 text-xs font-bold"
+                className="py-2.5 px-4 rounded-xl text-xs font-bold bg-[#062016] hover:bg-[#0B2E20] text-emerald-300 border border-[#124731] flex-1 flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Begin Another Assessment</span>
+                <span>Check Another Symptom</span>
               </button>
               {result.dangerLevel === 'high' && (
                 <button
                   type="button"
                   onClick={() => setSosActive(true)}
-                  className="btn-danger flex-1 py-2.5 text-xs font-bold"
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 flex-1 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  View Active Emergency SOS
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>View Emergency Ambulance SOS</span>
                 </button>
               )}
             </div>

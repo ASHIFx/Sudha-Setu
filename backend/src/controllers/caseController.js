@@ -80,6 +80,9 @@ export const intakeCase = async (req, res, next) => {
       requiresHumanReview: assessment.requiresHumanReview,
       matchedKeywords: assessment.matchedKeywords,
       emergency: assessment.dangerLevel === 'high',
+      isGreeting: Boolean(assessment.isGreeting),
+      greetingTitle: assessment.greetingTitle || '',
+      greetingMessage: assessment.greetingMessage || '',
     });
   } catch (err) {
     if (err.name === 'ValidationError') {

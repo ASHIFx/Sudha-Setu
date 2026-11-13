@@ -63,7 +63,8 @@ Guidelines:
 - If input is a greeting or general phrase without symptoms (e.g., "hi", "hii", "hello", "namaste", "pranam", "how are you"), set isGreeting: true, dangerLevel: "low", requiresHumanReview: false.
 - If input indicates severe distress, chest pain, stroke, breathing collapse, or massive trauma, set dangerLevel: "high", requiresHumanReview: true.
 - If input describes persistent or moderate acute disease, set dangerLevel: "medium", requiresHumanReview: true.
-- If input is mild or conversational wellness, set dangerLevel: "low", requiresHumanReview: false.`;
+- If input is mild or conversational wellness, set dangerLevel: "low", requiresHumanReview: false.
+- Respond in the requested language: "${languageUsed}" (if hi: Hindi, if bn: Bengali, if mr: Marathi, if ta: Tamil, if en: English). Translate all strings in generalTips, ayurvedicDietaryNotes, and safeRemedies into this language.`;
 
   try {
     const response = await client.models.generateContent({
