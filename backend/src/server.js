@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser';
 import { Server as SocketIOServer } from 'socket.io';
 import mongoose from 'mongoose';
 
-import { connectDB, disconnectDB } from './config/db.js';
+import { connectDB, disconnectDB, startAutoReconnect } from './config/db.js';
 import { assertJwtConfig, verifyAccessToken } from './config/jwt.js';
 import { startKeepAlive } from './config/cron.js';
 import User from './models/User.js';
@@ -54,7 +54,19 @@ app.use((req, _res, next) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'sudha-setu-api', env: NODE_ENV, uptime: process.uptime() });
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ status: 'ok', service: 'sudha-setu-api', env: NODE_ENV, uptime: process.uptime(), db: dbStatus });
+});
+
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next();
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database is connecting or currently unavailable. Please verify MongoDB is running or check MONGO_URI in backend/.env.',
+    });
+  }
+  next();
 });
 
 app.use('/api/auth', authRoutes);
@@ -181,13 +193,19 @@ io.on('connection', (socket) => {
 
 const start = async () => {
   try {
-    
     assertJwtConfig();
-    await connectDB();
     server.listen(PORT, () => {
       console.log(`[api] Sudha Setu listening on :${PORT} (${NODE_ENV})`);
       startKeepAlive();
     });
+
+    try {
+      await connectDB();
+    } catch (dbErr) {
+      console.warn(`[db] Initial connection failed: ${dbErr.message}`);
+      console.log(`[db] Server is running on :${PORT}; retrying DB connection every 5s...`);
+      startAutoReconnect();
+    }
   } catch (err) {
     console.error('[api] startup failed:', err.message);
     process.exit(1);

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 let connectionPromise = null;
+let reconnectTimer = null;
 
 export const connectDB = async () => {
   if (connectionPromise) return connectionPromise;
@@ -14,12 +15,15 @@ export const connectDB = async () => {
 
   connectionPromise = mongoose
     .connect(uri, {
-      serverSelectionTimeoutMS: 10_000,
-      
+      serverSelectionTimeoutMS: 5000,
       maxPoolSize: 20,
       minPoolSize: 2,
     })
     .then((m) => {
+      if (reconnectTimer) {
+        clearInterval(reconnectTimer);
+        reconnectTimer = null;
+      }
       console.log(`[db] connected: ${m.connection.host}/${m.connection.name}`);
       return m.connection;
     })
@@ -31,8 +35,22 @@ export const connectDB = async () => {
   return connectionPromise;
 };
 
+export const startAutoReconnect = () => {
+  if (reconnectTimer) return;
+  reconnectTimer = setInterval(async () => {
+    if (mongoose.connection.readyState === 0) {
+      try {
+        await connectDB();
+      } catch (err) {
+        console.warn(`[db] Reconnect attempt failed: ${err.message}. Retrying in 5s...`);
+      }
+    }
+  }, 5000);
+};
+
 mongoose.connection.on('disconnected', () => {
   console.warn('[db] disconnected');
+  startAutoReconnect();
 });
 
 mongoose.connection.on('error', (err) => {
@@ -40,6 +58,10 @@ mongoose.connection.on('error', (err) => {
 });
 
 export const disconnectDB = async () => {
+  if (reconnectTimer) {
+    clearInterval(reconnectTimer);
+    reconnectTimer = null;
+  }
   connectionPromise = null;
   await mongoose.connection.close(false);
   console.log('[db] connection closed');
