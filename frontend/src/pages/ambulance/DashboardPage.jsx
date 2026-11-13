@@ -132,10 +132,10 @@ export default function AmbulanceDashboardPage() {
       <div className="bg-white border border-slate-200 rounded p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            National Health Mission 108 • EMS Fleet Console
+            Emergency Medical Services • Fleet Dispatch
           </p>
           <h1 className="text-xl font-bold text-slate-900 mt-0.5">
-            Emergency Ambulance Dispatch Desk
+            Emergency Ambulance Command Console
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             {profile ? (

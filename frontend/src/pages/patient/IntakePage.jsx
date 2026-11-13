@@ -14,25 +14,25 @@ const LANGUAGE_OPTIONS = [
 
 function AudioCaptureBar({ listening, onClick, disabled }) {
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded">
+    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200/80 rounded-xl">
       <div>
         <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-          {listening ? 'Voice Recording in Progress' : 'Voice Input Capture'}
+          {listening ? 'Voice Recording in Progress' : 'Voice Input Transcription'}
         </p>
-        <p className="text-[11px] text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 mt-0.5">
           {listening
-            ? 'Speak clearly into your microphone in your chosen language.'
-            : 'Click the microphone button to transcribe symptoms automatically.'}
+            ? 'Speaking now. Tap Stop Recording when finished.'
+            : 'Tap the mic to describe your symptoms in Hindi or English.'}
         </p>
       </div>
       <button
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`px-4 py-2 rounded text-xs font-bold transition-colors flex items-center gap-2 ${
+        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
           listening
-            ? 'bg-red-700 hover:bg-red-800 text-white animate-pulse'
-            : 'bg-teal-800 hover:bg-teal-900 text-white'
+            ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+            : 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm'
         }`}
       >
         {listening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -120,14 +120,14 @@ export default function IntakePage() {
         <SosOverlay caseId={result.caseId} onDismiss={() => setSosActive(false)} />
       )}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Patient Clinical Pre-Consultation Station
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Patient Health Intake & Triage
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Patient: <span className="font-semibold text-slate-800">{user?.name || 'Anonymous Intake'}</span> • ABHA: <span className="font-mono text-slate-700">{user?.abhaId || 'Unlinked'}</span>
+              Patient: <span className="font-semibold text-slate-800">{user?.name || 'Guest'}</span>
             </p>
           </div>
 
@@ -138,9 +138,9 @@ export default function IntakePage() {
                 key={l.value}
                 type="button"
                 onClick={() => { setLang(l.value); reset(); setTextInput(''); }}
-                className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-colors ${
                   lang === l.value
-                    ? 'bg-teal-800 text-white border-teal-800'
+                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
@@ -151,30 +151,30 @@ export default function IntakePage() {
         </div>
 
         {!result && (
-          <div className="bg-white border border-slate-200 rounded p-6 shadow-xs space-y-5">
+          <div className="card space-y-5">
             {supported ? (
               <AudioCaptureBar listening={listening} onClick={toggle} disabled={submitting} />
             ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded">
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg">
                 Voice input is not supported in this browser environment. Please describe symptoms using the text console below.
               </div>
             )}
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="symptom-text" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                  Describe Clinical Symptoms / लक्षण विवरण
+                <label htmlFor="symptom-text" className="label !mb-0">
+                  Describe Symptoms / लक्षण विवरण
                 </label>
                 <span className="text-[11px] text-slate-400">{textInput.length} / 5000 chars</span>
               </div>
               <textarea
                 id="symptom-text"
-                className="w-full text-xs sm:text-sm p-3 rounded border border-slate-300 min-h-[140px] resize-y focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700 leading-relaxed font-normal"
+                className="input min-h-[140px] resize-y leading-relaxed"
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder={
                   lang === 'hi-IN'
-                    ? 'उदाहरण: मुझे पिछले दो दिनों से तेज बुखार है, सिर में लगातार दर्द हो रहा है और गले में खराश है...'
+                    ? 'उदाहरण: मुझे पिछले दो दिनों से तेज बुखार है, सिर में लगातार भारी दर्द है और गले में खराश है...'
                     : 'e.g. I have had continuous high fever for two days with severe headache and throat irritation...'
                 }
                 disabled={submitting}
@@ -187,16 +187,16 @@ export default function IntakePage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting || !textInput.trim()}
-                className="flex-1 py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="btn-primary flex-1 py-2.5 text-xs font-bold"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{submitting ? 'Running Clinical Triage…' : 'Submit for Clinical Triage'}</span>
+                <span>{submitting ? 'Analyzing Symptoms…' : 'Submit for Triage'}</span>
               </button>
               {textInput && (
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold transition-colors"
+                  className="btn-secondary px-3 py-2 text-xs"
                   title="Clear input"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export default function IntakePage() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex-1 py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 rounded text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                className="btn-secondary flex-1 py-2.5 text-xs font-bold"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Begin Another Assessment</span>
@@ -230,7 +230,7 @@ export default function IntakePage() {
                 <button
                   type="button"
                   onClick={() => setSosActive(true)}
-                  className="flex-1 py-2.5 px-4 bg-red-700 hover:bg-red-800 text-white rounded text-xs font-bold transition-colors"
+                  className="btn-danger flex-1 py-2.5 text-xs font-bold"
                 >
                   View Active Emergency SOS
                 </button>

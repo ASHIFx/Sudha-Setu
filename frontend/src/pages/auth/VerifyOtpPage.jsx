@@ -102,7 +102,7 @@ export default function VerifyOtpPage() {
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs space-y-5">
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-sm space-y-5">
           <form onSubmit={handleSubmit} className="space-y-5">
             {!prefillEmail && (
               <div>

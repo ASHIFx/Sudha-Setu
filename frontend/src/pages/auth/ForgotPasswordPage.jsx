@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
   if (done) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
-        <div className="w-full max-w-md bg-white border border-slate-200 rounded p-6 shadow-xs text-center space-y-4">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded p-6 shadow-sm text-center space-y-4">
           <h2 className="text-xl font-bold text-slate-900">Password Reset Complete</h2>
           <p className="text-xs text-slate-500">Your account credentials have been updated.</p>
           <button
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs">
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-sm">
           {step === 1 ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div>

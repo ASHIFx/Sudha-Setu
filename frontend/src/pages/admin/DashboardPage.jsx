@@ -164,10 +164,10 @@ export default function AdminDashboardPage() {
       <div className="bg-white border border-slate-200 rounded p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Ministry of Ayush • Governance & Telemetry
+            Platform Governance & Telemetry
           </p>
           <h1 className="text-xl font-bold text-slate-900 mt-0.5">
-            National Health Administration Portal
+            Administration & Clinical Telemetry Hub
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Clinical credential verification, ambulance fleet registry, user role governance, and epidemiological triage metrics.

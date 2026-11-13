@@ -119,7 +119,7 @@ export default function CaseDrawer({ caseId, onClose }) {
       <aside className="relative w-full max-w-2xl bg-white shadow-xl overflow-y-auto flex flex-col z-10 border-l border-slate-300">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Ayush Clinical Consultation Sheet</h2>
+            <h2 className="text-base font-bold text-slate-900">Clinical Consultation Record</h2>
             <p className="text-[11px] font-mono text-slate-500">Case ID: {caseId}</p>
           </div>
           <div className="flex items-center gap-2">
