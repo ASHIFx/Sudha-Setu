@@ -7,11 +7,24 @@ const LEVEL_RANK = { low: 1, medium: 2, high: 3 };
 
 const GREETING_PATTERN = /^(hi+|hello|hey+|namaste|namaskar|pranam|good\s*(morning|evening|afternoon)|hola|test|testing|kya\s*haal|kaise\s*ho|how\s*are\s*you)(\s+(there|doctor|doc|ji|bhai|sir|mam|friend|charak|vaani))?[\s!.,?]*$/i;
 
-const NEGATIONS = ['no', 'not', 'never', 'without', 'denies', 'nahi', 'nahin', 'नहीं', 'नही'];
-
 const hasNegation = (text, idx) => {
-  const prefix = text.slice(Math.max(0, idx - 30), idx).toLowerCase();
-  return NEGATIONS.some((n) => prefix.includes(n));
+  const prefix = text.slice(0, idx).split(/[.!?;,।]|\b(?:but|however|and)\b/i).at(-1);
+  return /(?:\b(?:no|not|never|without|denies|nahi|nahin)\b|नहीं|नही)\s+(?:\S+\s+){0,2}$/iu.test(prefix);
+};
+
+const hasPositiveKeyword = (text, keyword) => {
+  if (!keyword) return false;
+  let start = 0;
+  while (start < text.length) {
+    const index = text.indexOf(keyword, start);
+    if (index < 0) return false;
+    const before = text[index - 1] || '';
+    const after = text[index + keyword.length] || '';
+    const wholeWord = !/[a-z0-9]/i.test(keyword[0]) || (!/[a-z0-9]/i.test(before) && !/[a-z0-9]/i.test(after));
+    if (wholeWord && !hasNegation(text, index)) return true;
+    start = index + keyword.length;
+  }
+  return false;
 };
 
 const GREETING_RESPONSES = {
@@ -92,15 +105,6 @@ const GREETING_RESPONSES = {
   },
 };
 
-const defaultSelfCareAdvice = (lang = 'en') => {
-  const selected = GREETING_RESPONSES[lang] || GREETING_RESPONSES.en;
-  return {
-    generalTips: selected.generalTips,
-    ayurvedicDietaryNotes: selected.ayurvedicDietaryNotes,
-    safeRemedies: selected.safeRemedies,
-  };
-};
-
 export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   const text = String(patientText || '').trim();
   const normalizedLang = ['hi', 'bn', 'mr', 'ta'].includes(languageUsed?.toLowerCase()) ? languageUsed.toLowerCase() : 'en';
@@ -126,6 +130,14 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   }
 
   const lowerText = text.toLowerCase();
+  // This guard must run before mild rules or an unavailable AI can mask urgent text.
+  const emergencyKeywords = ['chest pain', 'heart attack', 'unconscious', 'cannot breathe', 'heavy bleeding', 'stroke', 'seizure'];
+  if (emergencyKeywords.some((keyword) => hasPositiveKeyword(lowerText, keyword))) {
+    return {
+      dangerLevel: 'high', confidenceScore: 0.5, requiresHumanReview: true,
+      verifiedAdvice: null, matchedKeywords: [], matchedRuleIds: [], reason: 'emergency_guard',
+    };
+  }
   const rules = await KnowledgeBase.find({ active: true }).lean();
 
   const matches = [];
@@ -133,8 +145,7 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     const hits = [];
     for (const keyword of rule.keywordTriggers || []) {
       const kw = keyword.toLowerCase().trim();
-      const idx = lowerText.indexOf(kw);
-      if (idx !== -1 && !hasNegation(lowerText, idx)) {
+      if (hasPositiveKeyword(lowerText, kw)) {
         hits.push(keyword);
       }
     }
@@ -169,25 +180,24 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
       return {
         dangerLevel: llmResult.dangerLevel,
         confidenceScore: llmResult.confidenceScore,
-        verifiedAdvice: llmResult.verifiedAdvice,
+        isGibberish: llmResult.isGibberish,
+        clinicalSummary: llmResult.clinicalSummary,
+        // Generated advice has not been verified by a clinician.
+        verifiedAdvice: null,
         matchedKeywords: [],
         matchedRuleIds: [],
-        requiresHumanReview: llmResult.requiresHumanReview,
+        requiresHumanReview: true,
         reason: 'llm_assessed',
       };
     }
 
-    const isEmergency = /(chest pain|heart attack|unconscious|cannot breathe|heavy bleeding|stroke|seizure)/i.test(text);
-    const hasSymptom = /(fever|pain|ache|cough|vomit|diarrhea|rash|chills|dizzy)/i.test(text);
-    const danger = isEmergency ? 'high' : hasSymptom ? 'medium' : 'low';
-
     return {
-      dangerLevel: danger,
-      confidenceScore: 0.75,
-      verifiedAdvice: defaultSelfCareAdvice(normalizedLang),
+      dangerLevel: 'medium',
+      confidenceScore: 0,
+      verifiedAdvice: null,
       matchedKeywords: [],
       matchedRuleIds: [],
-      requiresHumanReview: danger !== 'low',
+      requiresHumanReview: true,
       reason: 'clinical_fallback',
     };
   }
@@ -226,7 +236,7 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   return {
     dangerLevel: highestLevel,
     confidenceScore: Math.round(confidenceScore * 100) / 100,
-    verifiedAdvice: hasAdvice ? verifiedAdvice : defaultSelfCareAdvice(),
+    verifiedAdvice: hasAdvice ? verifiedAdvice : null,
     matchedKeywords,
     matchedRuleIds,
     requiresHumanReview,
@@ -234,8 +244,9 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   };
 };
 
-export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice }) => {
+export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice, requiresHumanReview }) => {
   if (dangerLevel === 'high') return 'emergency_alerted';
+  if (requiresHumanReview) return 'pending_doctor';
   if (dangerLevel === 'medium') return 'pending_doctor';
   if (confidenceScore >= LOW_CONFIDENCE_THRESHOLD && verifiedAdvice) {
     return 'resolved_selfcare';

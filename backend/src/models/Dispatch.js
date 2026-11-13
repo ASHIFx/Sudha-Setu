@@ -54,6 +54,11 @@ const dispatchSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+dispatchSchema.index(
+  { caseId: 1 },
+  { unique: true, partialFilterExpression: { status: { $in: ['dispatched', 'accepted'] } } }
+);
+
 const Dispatch = mongoose.model('Dispatch', dispatchSchema);
 
 export default Dispatch;

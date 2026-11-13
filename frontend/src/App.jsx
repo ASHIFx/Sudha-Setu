@@ -33,12 +33,13 @@ function RoleRedirect() {
 export default function App() {
   const dispatch = useDispatch();
   const loading = useSelector((s) => s.auth.loading);
+  const initialized = useSelector((s) => s.auth.initialized);
 
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
 
-  if (loading) {
+  if (loading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0B0F19]">
         <Spinner size="lg" />

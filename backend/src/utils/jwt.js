@@ -14,19 +14,19 @@ const getSecret = () => {
 };
 
 export const generateAccessToken = (userId, role) =>
-  jwt.sign({ sub: String(userId), role }, getSecret(), {
+  jwt.sign({ sub: String(userId), role, tokenType: 'access' }, getSecret(), {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     issuer: 'sudha-setu',
   });
 
 export const generateRefreshToken = (userId) =>
-  jwt.sign({ sub: String(userId) }, getSecret(), {
+  jwt.sign({ sub: String(userId), tokenType: 'refresh' }, getSecret(), {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     issuer: 'sudha-setu',
   });
 
 export const verifyToken = (token) =>
-  jwt.verify(token, getSecret(), { issuer: 'sudha-setu' });
+  jwt.verify(token, getSecret(), { issuer: 'sudha-setu', algorithms: ['HS256'] });
 
 const toMs = (expr) => {
   const match = expr.match(/^(\d+)([smhd])$/);

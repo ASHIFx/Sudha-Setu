@@ -1,6 +1,6 @@
 ﻿import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-3.5-flash-lite';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
 let _client = null;
 
@@ -10,6 +10,25 @@ const getClient = () => {
   if (!apiKey || apiKey.includes('your_actual')) return null;
   _client = new GoogleGenAI({ apiKey });
   return _client;
+};
+
+export const normalizeIntakeData = (data) => {
+  const markers = data?.ayurvedicMarkers || {};
+  return {
+    symptoms: Array.isArray(data?.symptoms) ? data.symptoms
+      .filter((s) => s && typeof s.name === 'string' && s.name.trim())
+      .map((s) => ({
+        name: s.name.trim(),
+        ...(typeof s.duration === 'string' ? { duration: s.duration } : {}),
+        ...(Number.isFinite(s.severity) && s.severity >= 1 && s.severity <= 10 ? { severity: s.severity } : {}),
+      })) : [],
+    ayurvedicMarkers: {
+      suspectedPrakriti: ['vata', 'pitta', 'kapha', 'vata-pitta', 'pitta-kapha', 'vata-kapha', 'tridosha'].includes(markers.suspectedPrakriti) ? markers.suspectedPrakriti : 'unknown',
+      agniStatus: ['sama', 'vishama', 'tikshna', 'manda'].includes(markers.agniStatus) ? markers.agniStatus : 'unknown',
+      ...(typeof markers.dietHabits === 'string' ? { dietHabits: markers.dietHabits } : {}),
+      ...(typeof markers.sleepPattern === 'string' ? { sleepPattern: markers.sleepPattern } : {}),
+    },
+  };
 };
 
 export const extractIntakeData = async (patientText) => {
@@ -40,12 +59,7 @@ Respond ONLY with valid JSON in this format:
     });
 
     const data = JSON.parse(res.text);
-    return {
-      symptoms: Array.isArray(data.symptoms)
-        ? data.symptoms.filter((s) => s && typeof s.name === 'string')
-        : [],
-      ayurvedicMarkers: data.ayurvedicMarkers || { suspectedPrakriti: 'unknown', agniStatus: 'unknown' },
-    };
+    return normalizeIntakeData(data);
   } catch (err) {
     console.warn('[extractor] extraction skipped:', err.message);
     return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };

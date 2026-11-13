@@ -3,38 +3,27 @@ import { Phone, MapPin, X, AlertTriangle } from 'lucide-react';
 import api from '../../lib/api.js';
 
 export default function SosOverlay({ caseId, onDismiss }) {
-  const [countdown, setCountdown] = useState(10);
+  const [dispatchError, setDispatchError] = useState('');
   const [dispatched, setDispatched] = useState(false);
   const [hospital, setHospital] = useState(null);
   const [dispatchInfo, setDispatchInfo] = useState(null);
 
-  const triggerDispatch = async () => {
-    if (!caseId) return;
-    try {
-      const { data } = await api.post('/ambulance/dispatch', { caseId });
-      setDispatchInfo(data.dispatch);
-      if (data.hospital) {
-        setHospital(data.hospital);
-      }
-      setDispatched(true);
-    } catch (err) {
-      console.warn('[sos] Dispatch request failed:', err.message);
-    }
-  };
-
   useEffect(() => {
-    triggerDispatch();
-
-    const timer = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return c - 1;
+    let active = true;
+    setDispatched(false);
+    setDispatchError('');
+    setHospital(null);
+    api.post('/ambulance/dispatch', { caseId }, { timeout: 15000 })
+      .then(({ data }) => {
+        if (!active) return;
+        setDispatchInfo(data.dispatch);
+        setHospital(data.hospital || null);
+        setDispatched(true);
+      })
+      .catch((err) => {
+        if (active) setDispatchError(err.response?.data?.message || 'Dispatch could not be confirmed. Call emergency services directly.');
       });
-    }, 1000);
-    return () => clearInterval(timer);
+    return () => { active = false; };
   }, [caseId]);
 
   return (
@@ -58,7 +47,7 @@ export default function SosOverlay({ caseId, onDismiss }) {
         </div>
 
         <p className="text-xs text-rose-200 leading-relaxed">
-          Critical symptom indicators have been triggered. The platform has initiated automated emergency hospital lookup and vehicle dispatch.
+          Urgent symptoms were detected. Call emergency services now. A platform dispatch request does not confirm that a crew is on its way.
         </p>
 
         {hospital && (
@@ -85,15 +74,17 @@ export default function SosOverlay({ caseId, onDismiss }) {
           </div>
         )}
 
-        <div className="bg-slate-900/80 border border-rose-500/40 rounded-xl p-4 text-xs space-y-1">
+        <div aria-live="polite" className="bg-slate-900/80 border border-rose-500/40 rounded-xl p-4 text-xs space-y-1">
           <p className="font-bold text-rose-300 uppercase tracking-wide text-[11px]">Ambulance Dispatch State</p>
           {dispatched ? (
             <p className="text-white font-medium">
               Ambulance dispatch record created. Status: <strong className="uppercase font-bold text-rose-400 underline">{dispatchInfo?.status || 'dispatched'}</strong>
             </p>
+          ) : dispatchError ? (
+            <p role="alert" className="text-rose-200">{dispatchError}</p>
           ) : (
             <p className="text-rose-300">
-              Connecting to nearest emergency ambulance unit... ({countdown}s)
+              Requesting an available ambulance unit…
             </p>
           )}
         </div>

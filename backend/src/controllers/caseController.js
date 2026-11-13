@@ -47,7 +47,7 @@ export const intakeCase = async (req, res, next) => {
       ...(ayurvedicMarkers ?? {}),
     };
 
-    const assessment = await analyzeSymptoms(patientText, languageUsed);
+    const assessment = await analyzeSymptoms(patientText, languageUsed || req.user.languagePreference);
     const status = statusForAssessment(assessment);
 
     const caseSheet = await CaseSheet.create({

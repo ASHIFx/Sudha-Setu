@@ -2,6 +2,7 @@ import 'dotenv/config';
 import http from 'node:http';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -24,7 +25,10 @@ import directoryRoutes from './routes/directoryRoutes.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const frontendDist = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
+const bundledFrontend = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
+const frontendDist = existsSync(resolve(bundledFrontend, 'index.html'))
+  ? bundledFrontend
+  : resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 
 const allowedOrigins = (process.env.CLIENT_ORIGINS || 'http://localhost:5173')
   .split(',')
@@ -142,6 +146,7 @@ io.use(async (socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`[socket] connected ${socket.id} (${socket.user.role})`);
+  socket.join(`user:${socket.user._id}`);
 
   socket.on('doctors:join', () => {
     if (['doctor', 'support', 'admin'].includes(socket.user.role)) {
@@ -160,8 +165,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('ambulance:join', () => {
-    if (['ambulance', 'admin'].includes(socket.user.role)) {
+    if (socket.user.role === 'admin') {
       socket.join('ambulance');
+    } else if (socket.user.role === 'ambulance') {
+      socket.join(`user:${socket.user._id}`);
     } else {
       socket.emit('error', { message: 'Not authorized to join the ambulance room' });
     }

@@ -4,7 +4,7 @@ import {
   extractCitations,
 } from './ragService.js';
 
-const MODEL = 'gemini-3.5-flash-lite';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 
 const BASE_SYSTEM_INSTRUCTION =
   'You are Sudha Setu AI, an intelligent clinical health triage and wellness assistant. ' +
@@ -82,6 +82,10 @@ Clinical Guidelines:
     });
 
     const parsed = JSON.parse(response.text);
+    if (!['low', 'medium', 'high'].includes(parsed.dangerLevel) ||
+        !Number.isFinite(parsed.confidenceScore) || parsed.confidenceScore < 0 || parsed.confidenceScore > 1) {
+      throw new Error('Invalid AI assessment');
+    }
     return {
       isGibberish: Boolean(parsed.isGibberish),
       isGreeting: Boolean(parsed.isGreeting),
