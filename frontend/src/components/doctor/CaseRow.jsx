@@ -1,25 +1,17 @@
-import { AlertTriangle, CheckCircle, Clock, User, ArrowRight } from 'lucide-react';
-
 const DANGER_BADGE = {
-  high: 'badge-red',
-  medium: 'badge-amber',
-  low: 'badge-green',
+  high: 'bg-rose-50 text-rose-800 border-rose-200',
+  medium: 'bg-amber-50 text-amber-800 border-amber-200',
+  low: 'bg-emerald-50 text-emerald-800 border-emerald-200',
 };
 
 const STATUS_LABEL = {
   pending_doctor: 'Pending Doctor',
-  queued_for_doctor: 'In Queue',
+  queued_for_doctor: 'Queued in OPD',
   in_consultation: 'In Consultation',
   escalated_human: 'Escalated',
-  emergency_alerted: 'Emergency Alerted',
-  resolved_selfcare: 'Self-Care',
+  emergency_alerted: 'Emergency SOS',
+  resolved_selfcare: 'Self-Care Closed',
   completed: 'Completed',
-};
-
-const DANGER_ICON = {
-  high: <AlertTriangle className="w-3 h-3" />,
-  medium: <Clock className="w-3 h-3" />,
-  low: <CheckCircle className="w-3 h-3" />,
 };
 
 export default function CaseRow({ caseDoc, onOpen, index }) {
@@ -31,57 +23,48 @@ export default function CaseRow({ caseDoc, onOpen, index }) {
 
   return (
     <tr
-      className={`hover:bg-brand-50/40 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
+      className={`hover:bg-slate-50 transition-colors cursor-pointer ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}
       onClick={() => onOpen(caseDoc)}
     >
-      <td className="px-5 py-3.5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-brand-100/80 border border-brand-200 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-brand-700" />
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 text-xs sm:text-sm">{patient.name ?? 'Anonymous Patient'}</p>
-            <p className="text-[11px] text-slate-400">{patient.phone ?? patient.email ?? 'ID: ' + caseDoc._id.slice(-6)}</p>
-          </div>
+      <td className="px-4 py-3">
+        <div>
+          <p className="font-bold text-slate-900 text-xs">{patient.name ?? 'Anonymous Patient'}</p>
+          <p className="text-[11px] text-slate-400">{patient.phone ?? patient.email ?? 'ID: ' + caseDoc._id.slice(-6)}</p>
         </div>
       </td>
 
-      <td className="px-5 py-3.5 hidden sm:table-cell max-w-[240px]">
+      <td className="px-4 py-3 hidden sm:table-cell max-w-[240px]">
         <p className="text-xs text-slate-600 truncate font-normal">{symptomText}</p>
       </td>
 
-      <td className="px-5 py-3.5">
-        <span className={`${DANGER_BADGE[caseDoc.dangerLevel] ?? 'badge-green'} gap-1 text-[11px]`}>
-          {DANGER_ICON[caseDoc.dangerLevel]}
-          <span className="capitalize font-semibold">{caseDoc.dangerLevel}</span>
+      <td className="px-4 py-3">
+        <span className={`inline-block px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${DANGER_BADGE[caseDoc.dangerLevel] ?? 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+          {caseDoc.dangerLevel} Risk
         </span>
       </td>
 
-      <td className="px-5 py-3.5 hidden md:table-cell">
-        <span className="text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200/60 px-2.5 py-0.5 rounded-full">
+      <td className="px-4 py-3 hidden md:table-cell">
+        <span className="text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
           {STATUS_LABEL[caseDoc.status] ?? caseDoc.status}
         </span>
       </td>
 
-      <td className="px-5 py-3.5 hidden lg:table-cell">
-        <p className="text-xs text-slate-400">
-          {new Date(caseDoc.createdAt).toLocaleString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </p>
+      <td className="px-4 py-3 hidden lg:table-cell text-slate-500 text-[11px]">
+        {new Date(caseDoc.createdAt).toLocaleString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
       </td>
 
-      <td className="px-5 py-3.5 text-right">
+      <td className="px-4 py-3 text-right">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpen(caseDoc); }}
-          className="btn-secondary px-2.5 py-1 text-xs font-semibold hover:border-brand-500 hover:text-brand-700 inline-flex items-center gap-1"
+          className="px-2.5 py-1 text-xs font-semibold text-slate-700 border border-slate-300 rounded hover:bg-slate-100"
         >
-          <span>Open</span>
-          <ArrowRight className="w-3 h-3" />
+          Review
         </button>
       </td>
     </tr>

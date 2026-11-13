@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Loader2, LogIn, Eye, EyeOff, Sparkles, Key } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser } from '../../store/authSlice.js';
 
@@ -45,28 +45,27 @@ export default function LoginPage() {
         navigate('/intake');
       }
     } else {
-      toast.error(result.payload ?? 'Login failed. Please try again.');
+      toast.error(result.payload ?? 'Login failed. Please verify credentials.');
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50/50">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 mb-3 shadow-sm">
-            <LogIn className="w-6 h-6" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Sign in to Sudha Setu</h1>
-          <p className="mt-1.5 text-sm text-slate-500">Ministry of Ayush • Ayurvedic Triage Portal</p>
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+      <div className="w-full max-w-md space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
+            Ministry of Ayush • Triage Portal
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900 text-center mt-1">
+            Sign In to Clinical Console
+          </h1>
         </div>
 
-        <div className="card shadow-lg border-slate-200/80 p-8 space-y-6">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-brand-600" /> Demo Quick-Fill
-              </span>
-              <span className="text-[11px] text-slate-400 font-normal">One-click credentials</span>
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs space-y-5">
+          <div className="border-b border-slate-100 pb-3 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-semibold text-slate-700">Demo Role Quick-Fill:</span>
+              <span>Click to auto-populate</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {DEMO_PRESETS.map((p) => (
@@ -74,10 +73,9 @@ export default function LoginPage() {
                   key={p.role}
                   type="button"
                   onClick={() => handleSelectDemo(p)}
-                  className="px-2.5 py-1.5 text-xs font-medium bg-white hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-lg border border-slate-200 transition-colors text-left truncate flex items-center gap-1.5"
+                  className="px-2.5 py-1.5 text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-800 rounded border border-slate-200 text-left transition-colors"
                 >
-                  <Key className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                  <span className="truncate">{p.label}</span>
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -85,13 +83,15 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="label text-sm">Email Address</label>
+              <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
+                Email Address
+              </label>
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="input text-sm py-2.5"
+                className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
@@ -99,19 +99,21 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="label text-sm">Password</label>
-                <Link to="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-xs font-semibold text-slate-700">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-xs text-teal-800 hover:underline">
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative mt-1">
+              <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="input text-sm py-2.5 pr-10"
+                  className="w-full text-xs px-3 py-2 rounded border border-slate-300 pr-9 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -119,27 +121,28 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base shadow-sm mt-2">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-60"
+            >
               {loading ? 'Authenticating…' : 'Sign In'}
             </button>
           </form>
 
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-500">
-              New to Sudha Setu?{' '}
-              <Link to="/register" className="text-brand-600 font-semibold hover:text-brand-700">
-                Register as a patient
-              </Link>
-            </p>
+          <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+            <span>Patient without an account? </span>
+            <Link to="/register" className="text-teal-800 font-semibold hover:underline">
+              Register here
+            </Link>
           </div>
         </div>
       </div>

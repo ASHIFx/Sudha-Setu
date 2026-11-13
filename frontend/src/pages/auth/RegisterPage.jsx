@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, UserPlus, Eye, EyeOff, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 
@@ -25,8 +25,8 @@ export default function RegisterPage() {
       });
       toast.success(
         data.devOtp
-          ? `Email delivery simulated. Development OTP: ${data.devOtp}`
-          : 'Account created! Check your email for verification OTP.'
+          ? `Development OTP: ${data.devOtp}`
+          : 'Account created! Enter the verification code sent to your email.'
       );
       navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`, {
         state: { devOtp: data.devOtp },
@@ -40,26 +40,29 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50/50">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 mb-3 shadow-sm">
-            <UserPlus className="w-6 h-6" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Patient Account</h1>
-          <p className="mt-1.5 text-sm text-slate-500">Ayush Digital Pre-Consultation & Care Portal</p>
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+      <div className="w-full max-w-md space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
+            Ayush Digital Health Mission
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900 text-center mt-1">
+            Patient Portal Registration
+          </h1>
         </div>
 
-        <div className="card shadow-lg border-slate-200/80 p-8 space-y-6">
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="label text-sm">Full Name *</label>
+              <label htmlFor="name" className="block text-xs font-semibold text-slate-700 mb-1">
+                Full Name *
+              </label>
               <input
                 id="name"
                 type="text"
                 autoComplete="name"
                 required
-                className="input text-sm py-2.5"
+                className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                 value={form.name}
                 onChange={update('name')}
                 placeholder="e.g. Ramesh Chandra"
@@ -67,29 +70,33 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="label text-sm">Email Address *</label>
+              <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
+                Email Address *
+              </label>
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="input text-sm py-2.5"
+                className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                 value={form.email}
                 onChange={update('email')}
-                placeholder="you@example.com"
+                placeholder="name@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="label text-sm">Password * (min 8 characters)</label>
-              <div className="relative mt-1">
+              <label htmlFor="password" className="block text-xs font-semibold text-slate-700 mb-1">
+                Password * (Minimum 8 characters)
+              </label>
+              <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
                   minLength={8}
-                  className="input text-sm py-2.5 pr-10"
+                  className="w-full text-xs px-3 py-2 rounded border border-slate-300 pr-9 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   value={form.password}
                   onChange={update('password')}
                   placeholder="••••••••"
@@ -97,23 +104,25 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="abhaId" className="label text-sm">ABHA ID / Ayushman Bharat</label>
-                <span className="text-[11px] text-slate-400">Optional</span>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="abhaId" className="block text-xs font-semibold text-slate-700">
+                  ABHA ID (Ayushman Bharat Health Account)
+                </label>
+                <span className="text-[10px] text-slate-400">Optional</span>
               </div>
               <input
                 id="abhaId"
                 type="text"
-                className="input text-sm py-2.5"
+                className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                 value={form.abhaId}
                 onChange={update('abhaId')}
                 placeholder="XX-XXXX-XXXX-XXXX"
@@ -123,19 +132,20 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base shadow-sm mt-2">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <HeartPulse className="w-4 h-4" />}
-              {loading ? 'Registering…' : 'Create Account'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-60"
+            >
+              {loading ? 'Creating Record…' : 'Register Account'}
             </button>
           </form>
 
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-500">
-              Already have an account?{' '}
-              <Link to="/login" className="text-brand-600 font-semibold hover:text-brand-700">
-                Sign in
-              </Link>
-            </p>
+          <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+            <span>Already registered? </span>
+            <Link to="/login" className="text-teal-800 font-semibold hover:underline">
+              Sign In
+            </Link>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Loader2, ShieldCheck, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 import { setUser } from '../../store/authSlice.js';
@@ -61,7 +61,7 @@ export default function VerifyOtpPage() {
         navigate('/intake');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message ?? 'Invalid or expired code.');
+      toast.error(err.response?.data?.message ?? 'Invalid or expired verification code.');
     } finally {
       setLoading(false);
     }
@@ -73,51 +73,57 @@ export default function VerifyOtpPage() {
     try {
       const { data } = await api.post('/auth/resend-otp', { email: email.trim() });
       toast.success(
-        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new OTP has been sent if the email is registered.'
+        data.devOtp ? `Development OTP: ${data.devOtp}` : 'A new code has been sent if the email is registered.'
       );
     } catch (err) {
-      toast.error(err.response?.data?.message ?? 'Could not resend the OTP.');
+      toast.error(err.response?.data?.message ?? 'Could not resend verification code.');
     } finally {
       setResending(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50/50">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 mb-3 shadow-sm">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Verify Your Email</h1>
-          <p className="mt-1.5 text-sm text-slate-500">
-            Enter the 6-digit code sent to <span className="font-semibold text-slate-700">{email || 'your email'}</span>
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+      <div className="w-full max-w-md space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
+            Account Verification
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900 text-center mt-1">
+            Enter Verification Code
+          </h1>
+          <p className="text-xs text-slate-500 text-center mt-1">
+            Sent to <span className="font-semibold text-slate-800">{email || 'your email'}</span>
           </p>
           {developmentOtp && (
-            <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800">
-              Dev Mode OTP: <span className="font-mono text-sm tracking-wider">{developmentOtp}</span>
+            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-center text-xs text-amber-800">
+              Dev Mode OTP: <span className="font-mono font-bold">{developmentOtp}</span>
             </div>
           )}
         </div>
 
-        <div className="card shadow-lg border-slate-200/80 p-8 space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {!prefillEmail && (
               <div>
-                <label className="label text-sm">Registered Email</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   required
-                  className="input text-sm py-2.5"
+                  className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="name@example.com"
                 />
               </div>
             )}
 
             <div>
-              <label className="label text-sm text-center block mb-3">6-Digit Verification Code</label>
+              <label className="block text-xs font-semibold text-slate-700 text-center mb-2">
+                6-Digit Security Code
+              </label>
               <div className="flex justify-center gap-2" onPaste={handlePaste}>
                 {otp.map((digit, i) => (
                   <input
@@ -129,7 +135,7 @@ export default function VerifyOtpPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all shadow-sm"
+                    className="w-10 h-12 text-center text-lg font-mono font-bold rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   />
                 ))}
               </div>
@@ -138,22 +144,20 @@ export default function VerifyOtpPage() {
             <button
               type="submit"
               disabled={loading || otp.join('').length < 6}
-              className="btn-primary w-full py-3 text-base shadow-sm"
+              className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-60"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              {loading ? 'Verifying…' : 'Verify & Enter'}
+              {loading ? 'Verifying…' : 'Verify & Continue'}
             </button>
           </form>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-            <span>Didn't get the code?</span>
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
+            <span>Did not receive code?</span>
             <button
               type="button"
               onClick={handleResend}
               disabled={resending}
-              className="text-brand-600 font-semibold hover:text-brand-700 flex items-center gap-1 disabled:opacity-50"
+              className="text-teal-800 font-semibold hover:underline disabled:opacity-50"
             >
-              <RefreshCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
               Resend Code
             </button>
           </div>

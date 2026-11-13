@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Phone, MapPin, Ambulance, X, AlertTriangle } from 'lucide-react';
+import { Phone, MapPin, X } from 'lucide-react';
 import api from '../../lib/api.js';
 
 export default function SosOverlay({ caseId, onDismiss }) {
@@ -38,87 +38,79 @@ export default function SosOverlay({ caseId, onDismiss }) {
   }, [caseId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-700 bg-opacity-97 text-white px-4">
-      <div className="sos-flash absolute inset-0 pointer-events-none" />
-
-      <div className="relative z-10 max-w-lg w-full text-center space-y-6">
-        <div className="flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+      <div className="bg-red-800 text-white max-w-lg w-full rounded border-2 border-red-500 shadow-2xl p-6 space-y-5 relative">
+        <div className="flex items-start justify-between border-b border-red-700 pb-3">
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-widest bg-red-950 text-red-200 px-2 py-0.5 rounded">
+              Critical Emergency Alert
+            </span>
+            <h2 className="text-xl font-black mt-1">Tier 3: High Risk Condition Detected</h2>
+          </div>
           <button
             onClick={onDismiss}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="p-1 rounded text-red-200 hover:text-white hover:bg-red-700 transition-colors"
             aria-label="Dismiss SOS overlay"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex justify-center">
-          <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-2xl">
-            <AlertTriangle className="w-12 h-12 text-red-600" />
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-4xl font-black tracking-tight">EMERGENCY ALERT</h1>
-          <p className="text-red-200 text-lg mt-2">Critical symptoms detected. Emergency dispatch triggered.</p>
-        </div>
+        <p className="text-xs text-red-100 leading-relaxed">
+          Critical symptom indicators have been triggered. The platform has initiated automated emergency hospital lookup and vehicle dispatch.
+        </p>
 
         {hospital && (
-          <div className="bg-white/10 rounded-2xl p-5 text-left space-y-3">
-            <p className="flex items-center gap-2 font-semibold text-lg">
-              <MapPin className="w-5 h-5 text-red-200" /> Assigned Nearest Hospital
-            </p>
+          <div className="bg-red-900/80 border border-red-700 rounded p-4 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-red-100 uppercase tracking-wide text-[11px]">
+              <MapPin className="w-3.5 h-3.5 text-red-300" />
+              <span>Assigned Emergency Facility</span>
+            </div>
             <div>
-              <p className="font-bold text-xl">{hospital.name}</p>
+              <p className="font-bold text-sm text-white">{hospital.name}</p>
               {hospital.phone && (
-                <p className="text-red-200 text-sm">Emergency Desk: {hospital.phone}</p>
+                <p className="text-red-200 text-xs mt-0.5">Emergency Desk: {hospital.phone}</p>
               )}
             </div>
             {hospital.phone && (
               <a
                 href={`tel:${hospital.phone}`}
-                className="flex items-center gap-3 bg-white text-red-700 font-bold rounded-xl px-5 py-3 hover:bg-red-50 transition-colors"
+                className="inline-flex items-center gap-2 bg-white text-red-900 font-bold px-3 py-1.5 rounded text-xs hover:bg-red-50 transition-colors mt-1"
               >
-                <Phone className="w-5 h-5" />
-                Call Hospital: {hospital.phone}
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call Hospital Direct</span>
               </a>
             )}
           </div>
         )}
 
-        <div className="bg-white/10 rounded-2xl p-5">
-          <div className="flex items-center gap-3">
-            <Ambulance className="w-6 h-6 text-red-200 flex-shrink-0" />
-            {dispatched ? (
-              <div className="text-left">
-                <p className="font-bold text-lg">Ambulance Dispatched ✓</p>
-                <p className="text-red-200 text-sm">
-                  {dispatchInfo?.status === 'accepted'
-                    ? 'Unit is en route to patient coordinates'
-                    : 'Dispatch recorded. Emergency responder alerted.'}
-                </p>
-              </div>
-            ) : (
-              <div className="text-left">
-                <p className="font-bold text-lg">Contacting Emergency Fleet…</p>
-                <p className="text-red-200 text-sm">
-                  Auto-connecting in <span className="text-white font-black text-xl">{countdown}s</span>
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="bg-red-900/80 border border-red-700 rounded p-4 text-xs space-y-1">
+          <p className="font-bold text-red-100 uppercase tracking-wide text-[11px]">Ambulance Dispatch State</p>
+          {dispatched ? (
+            <p className="text-white font-medium">
+              Ambulance dispatch record created. Status: <strong className="uppercase font-bold underline">{dispatchInfo?.status || 'dispatched'}</strong>
+            </p>
+          ) : (
+            <p className="text-red-200">
+              Connecting to nearest emergency ambulance unit... ({countdown}s)
+            </p>
+          )}
         </div>
 
-        <a
-          href="tel:112"
-          className="flex items-center justify-center gap-3 w-full bg-white text-red-700 font-black text-xl rounded-2xl py-4 hover:bg-red-50 transition-colors shadow-lg"
-        >
-          <Phone className="w-6 h-6" />
-          Call 112 — National Emergency
-        </a>
+        <div className="pt-2">
+          <a
+            href="tel:112"
+            className="w-full flex items-center justify-center gap-2 bg-white text-red-900 font-black text-sm py-3 rounded hover:bg-red-50 transition-colors"
+          >
+            <Phone className="w-4 h-4" />
+            <span>Call 112 (National Emergency Helpline)</span>
+          </a>
+        </div>
 
         {caseId && (
-          <p className="text-red-300 text-xs">Case ref: {caseId}</p>
+          <div className="text-[10px] text-red-300 text-center font-mono">
+            Emergency Case Identifier: {caseId}
+          </div>
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Mail, KeyRound, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
 
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
       toast.success('Reset code sent if the email exists.');
       setStep(2);
     } catch (err) {
-      toast.error(err.response?.data?.message ?? 'Something went wrong.');
+      toast.error(err.response?.data?.message ?? 'Request failed.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
       });
       setDone(true);
     } catch (err) {
-      toast.error(err.response?.data?.message ?? 'Invalid or expired code.');
+      toast.error(err.response?.data?.message ?? 'Invalid or expired reset code.');
     } finally {
       setLoading(false);
     }
@@ -49,15 +49,15 @@ export default function ForgotPasswordPage() {
 
   if (done) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md text-center card shadow-md space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900">Password Reset!</h2>
-          <p className="text-slate-500">Your password has been updated. Please log in with your new password.</p>
-          <button onClick={() => navigate('/login')} className="btn-primary w-full py-4 text-lg">
-            Go to Login
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded p-6 shadow-xs text-center space-y-4">
+          <h2 className="text-xl font-bold text-slate-900">Password Reset Complete</h2>
+          <p className="text-xs text-slate-500">Your account credentials have been updated.</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors"
+          >
+            Return to Login
           </button>
         </div>
       </div>
@@ -65,58 +65,66 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-slate-900">Reset Password</h1>
-          <p className="mt-2 text-slate-500">
-            {step === 1 ? 'Enter your email to receive a reset code.' : 'Enter the code and your new password.'}
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-slate-50">
+      <div className="w-full max-w-md space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
+            Credential Recovery
+          </p>
+          <h1 className="text-2xl font-bold text-slate-900 text-center mt-1">
+            Reset Password
+          </h1>
+          <p className="text-xs text-slate-500 text-center mt-1">
+            {step === 1 ? 'Enter your registered email address.' : 'Enter the security code and new password.'}
           </p>
         </div>
 
-        <div className="card shadow-md">
+        <div className="bg-white border border-slate-200 rounded p-6 shadow-xs">
           {step === 1 ? (
-            <form onSubmit={handleRequestOtp} className="space-y-5">
+            <form onSubmit={handleRequestOtp} className="space-y-4">
               <div>
-                <label htmlFor="email" className="label text-base">Email Address</label>
+                <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
+                  Registered Email Address
+                </label>
                 <input
                   id="email"
                   type="email"
                   required
-                  className="input text-base py-4"
+                  className="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="name@example.com"
                 />
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-lg">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
-                {loading ? 'Sending…' : 'Send Reset Code'}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-60"
+              >
+                {loading ? 'Sending Code…' : 'Send Reset Code'}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleResetPassword} className="space-y-5">
+            <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="label text-base">Reset Code</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Verification Code</label>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  maxLength={6}
                   required
-                  className="input text-base py-4 text-center font-bold tracking-widest"
+                  className="w-full text-xs px-3 py-2 font-mono rounded border border-slate-300 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="000000"
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
                 />
               </div>
               <div>
-                <label className="label text-base">New Password (min 8 characters)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">New Password (min 8 chars)</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     minLength={8}
-                    className="input text-base py-4 pr-12"
+                    className="w-full text-xs px-3 py-2 rounded border border-slate-300 pr-9 focus:outline-none focus:ring-1 focus:ring-teal-700 focus:border-teal-700"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="••••••••"
@@ -124,33 +132,28 @@ export default function ForgotPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-lg">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <KeyRound className="w-5 h-5" />}
-                {loading ? 'Resetting…' : 'Reset Password'}
-              </button>
               <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="btn-ghost w-full py-2 text-sm"
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 px-4 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs font-bold transition-colors disabled:opacity-60"
               >
-                ← Back
+                {loading ? 'Updating Password…' : 'Set New Password'}
               </button>
             </form>
           )}
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Remember your password?{' '}
-            <Link to="/login" className="text-brand-600 font-semibold hover:text-brand-700">
-              Sign in
+          <div className="pt-3 mt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+            <Link to="/login" className="text-teal-800 font-semibold hover:underline">
+              Back to Login
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>
