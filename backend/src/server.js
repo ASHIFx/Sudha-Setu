@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import http from 'node:http';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -23,6 +25,7 @@ import aiRoutes from './routes/aiRoutes.js';
 
 const PORT = Number(process.env.PORT) || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const frontendDist = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 
 const allowedOrigins = (process.env.CLIENT_ORIGINS || 'http://localhost:5173')
   .split(',')
@@ -66,7 +69,21 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ambulance', ambulanceRoutes);
 app.use('/api/ai', aiRoutes);
 
-app.use((req, res) => {
+app.use(express.static(frontendDist));
+
+app.use((req, res, next) => {
+  const isApiRequest =
+    req.path === '/api' ||
+    req.path.startsWith('/api/') ||
+    req.path === '/socket.io' ||
+    req.path.startsWith('/socket.io/');
+
+  if (req.method === 'GET' && !isApiRequest && req.accepts('html')) {
+    return res.sendFile(resolve(frontendDist, 'index.html'), (err) => {
+      if (err) next(err);
+    });
+  }
+
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
