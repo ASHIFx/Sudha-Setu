@@ -30,14 +30,37 @@ const frontendDist = existsSync(resolve(bundledFrontend, 'index.html'))
   ? bundledFrontend
   : resolve(dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 
-const allowedOrigins = (process.env.CLIENT_ORIGINS || 'http://localhost:5173')
+const configuredOrigins = (process.env.CLIENT_ORIGINS || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5000',
+  process.env.RENDER_EXTERNAL_URL,
+].filter(Boolean);
+
+const allowedOrigins = [...new Set([...configuredOrigins, ...defaultOrigins])];
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname.endsWith('.onrender.com') || hostname === 'localhost' || hostname === '127.0.0.1') {
+      return true;
+    }
+  } catch {}
+  return false;
+};
+
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    if (isOriginAllowed(origin)) return callback(null, true);
     const error = new Error(`Origin ${origin} is not allowed by CORS`);
     error.status = 403;
     callback(error);
@@ -118,7 +141,13 @@ app.use((err, req, res, _next) => {
 const server = http.createServer(app);
 
 export const io = new SocketIOServer(server, {
-  cors: { origin: allowedOrigins, credentials: true },
+  cors: {
+    origin(origin, callback) {
+      if (isOriginAllowed(origin)) return callback(null, true);
+      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
+    credentials: true,
+  },
 });
 
 app.set('io', io);

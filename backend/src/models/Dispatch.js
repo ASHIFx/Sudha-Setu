@@ -17,7 +17,6 @@ const dispatchSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CaseSheet',
       required: [true, 'caseId is required'],
-      index: true,
     },
     ambulanceId: {
       type: mongoose.Schema.Types.ObjectId,
