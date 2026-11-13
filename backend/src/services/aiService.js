@@ -40,13 +40,6 @@ const getClient = () => {
   return _client;
 };
 
-/**
- * Sends a chat message to Gemini with injected KnowledgeBase RAG grounding and citations.
- * @param {Array} storedMessages - Prior conversation turns.
- * @param {string} userMessage - New user prompt.
- * @param {Object} options - RAG options including retrievedRules.
- * @returns {Promise<{ text: string, citedRules: Array<string>, retrievedRules: Array }>}
- */
 export const sendChatMessage = async (storedMessages, userMessage, { retrievedRules = [] } = {}) => {
   const client = getClient();
 

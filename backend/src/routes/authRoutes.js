@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import passport from 'passport';
 
 import {
   register,
@@ -12,10 +11,8 @@ import {
   resendVerificationOtp,
   forgotPassword,
   resetPassword,
-  googleCallback,
 } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
-import { googleAuthEnabled } from '../config/passport.js';
 
 const router = Router();
 
@@ -46,17 +43,5 @@ router.post('/reset-password', otpLimiter, resetPassword);
 router.post('/logout', logout);
 router.post('/refresh', refresh);
 router.get('/me', protect, getMe);
-
-if (googleAuthEnabled) {
-  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
-  router.get(
-    '/google/callback',
-    passport.authenticate('google', {
-      session: false,
-      failureRedirect: process.env.CLIENT_URL || '/',
-    }),
-    googleCallback
-  );
-}
 
 export default router;

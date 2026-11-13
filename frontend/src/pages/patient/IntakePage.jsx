@@ -37,7 +37,6 @@ function MicButton({ listening, onClick, disabled }) {
 export default function IntakePage() {
   const user = useSelector((s) => s.auth.user);
   
-  // Initialize language from user preference or default to Hindi
   const [lang, setLang] = useState(() => {
     const pref = user?.languagePreference?.toLowerCase();
     if (pref === 'en' || pref === 'en-in') return 'en-IN';

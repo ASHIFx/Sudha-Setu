@@ -6,11 +6,9 @@ import {
   Stethoscope,
   Truck,
   CheckCircle,
-  XCircle,
   AlertCircle,
   RefreshCw,
   Plus,
-  BookOpen,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
@@ -25,7 +23,6 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
-  // New Doctor Modal state
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [doctorForm, setDoctorForm] = useState({
     userId: '',
@@ -34,7 +31,6 @@ export default function AdminDashboardPage() {
     yearsOfExperience: 0,
   });
 
-  // New Ambulance Modal state
   const [showAmbulanceModal, setShowAmbulanceModal] = useState(false);
   const [ambulanceForm, setAmbulanceForm] = useState({
     userId: '',
@@ -175,7 +171,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Top Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-brand-700 text-white flex items-center justify-center shadow-lg shadow-brand-100">
@@ -200,7 +195,6 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         {[
           { id: 'telemetry', label: 'Telemetry & Metrics', icon: Activity },
@@ -231,7 +225,6 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
-      {/* TAB 1: Telemetry */}
       {activeTab === 'telemetry' && telemetry && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -342,7 +335,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TAB 2: Doctor Verification Queue */}
       {activeTab === 'doctors' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -422,7 +414,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TAB 3: Ambulance Units */}
       {activeTab === 'ambulances' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -488,7 +479,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* TAB 4: User Role Management */}
       {activeTab === 'users' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -556,7 +546,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Modal: Create Doctor Profile */}
       {showDoctorModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
@@ -649,7 +638,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Modal: Register Ambulance Profile */}
       {showAmbulanceModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">

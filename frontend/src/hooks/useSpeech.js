@@ -8,12 +8,8 @@ const getSpeechRecognitionAPI = () =>
 const getSpeechSynthesisAPI = () =>
   typeof window === 'undefined' ? null : window.speechSynthesis || null;
 
-/**
- * Detect language based on script / content (Devanagari vs Latin)
- */
 export const detectLanguage = (text = '') => {
   if (!text) return 'hi-IN';
-  // Check for Devanagari unicode range (Hindi / Sanskrit / Marathi)
   const devanagariRegex = /[\u0900-\u097F]/;
   return devanagariRegex.test(text) ? 'hi-IN' : 'en-IN';
 };
@@ -32,18 +28,15 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
   const finalTranscriptRef = useRef('');
   const currentUtteranceRef = useRef(null);
 
-  // Sync prop changes to currentLang
   useEffect(() => {
     if (lang) setCurrentLang(lang);
   }, [lang]);
 
-  // STT Stop
   const stop = useCallback(() => {
     recogRef.current?.stop();
     setListening(false);
   }, []);
 
-  // STT Start
   const start = useCallback(() => {
     const SpeechRecognitionAPI = getSpeechRecognitionAPI();
     if (!SpeechRecognitionAPI) return;
@@ -98,7 +91,6 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
     setTranscript('');
   }, [stop]);
 
-  // Text-To-Speech (TTS)
   const stopSpeaking = useCallback(() => {
     const synth = getSpeechSynthesisAPI();
     if (synth) {
@@ -112,17 +104,16 @@ export default function useSpeech({ lang = 'hi-IN', onResult } = {}) {
       const synth = getSpeechSynthesisAPI();
       if (!synth || !text) return;
 
-      synth.cancel(); // Stop any active speech
+      synth.cancel();
 
       const targetLang = options.lang || currentLang || detectLanguage(text);
-      const cleanText = text.replace(/[*_#`[\]()]/g, ''); // strip markdown formatting for cleaner speech
+      const cleanText = text.replace(/[*_#`[\]()]/g, '');
 
       const utterance = new window.SpeechSynthesisUtterance(cleanText);
       utterance.lang = targetLang;
       utterance.rate = options.rate ?? 1.0;
       utterance.pitch = options.pitch ?? 1.0;
 
-      // Select matching voice if available
       const voices = synth.getVoices?.() || [];
       const matchVoice =
         voices.find((v) => v.lang === targetLang) ||

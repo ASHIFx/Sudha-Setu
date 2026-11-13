@@ -4,11 +4,7 @@ import Dispatch, { DISPATCH_STATUSES } from '../models/Dispatch.js';
 import CaseSheet from '../models/CaseSheet.js';
 import Hospital from '../models/Hospital.js';
 
-/**
- * Finds the nearest hospital to the given coordinates by querying the Hospital collection.
- */
 export const findNearestHospital = async (location) => {
-  // Query the Hospital collection
   let hospitals = await Hospital.find({ emergencyCapable: true });
   if (!hospitals || hospitals.length === 0) {
     hospitals = await Hospital.find();
@@ -23,7 +19,7 @@ export const findNearestHospital = async (location) => {
   }
 
   const toRad = (deg) => (deg * Math.PI) / 180;
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   let nearestHospital = null;
   let minDistance = Infinity;
 
@@ -94,10 +90,8 @@ export const createDispatch = async (req, res, next) => {
         return res.status(404).json({ message: 'Specified ambulance not found' });
       }
     } else {
-      // Find an available ambulance
       ambulance = await Ambulance.findOne({ status: 'available' });
       if (!ambulance) {
-        // Fall back to any ambulance if none marked available
         ambulance = await Ambulance.findOne();
       }
     }
@@ -108,7 +102,6 @@ export const createDispatch = async (req, res, next) => {
       });
     }
 
-    // Query Hospital collection for nearest hospital
     const nearestHospital = await findNearestHospital(caseSheet.location);
 
     const dispatch = await Dispatch.create({
@@ -121,11 +114,9 @@ export const createDispatch = async (req, res, next) => {
       notes: notes || 'Emergency dispatch requested for high-risk triage case',
     });
 
-    // Update ambulance status
     ambulance.status = 'dispatched';
     await ambulance.save();
 
-    // Update case sheet status
     caseSheet.status = 'emergency_alerted';
     await caseSheet.save();
 
@@ -153,7 +144,6 @@ export const createDispatch = async (req, res, next) => {
 
     io?.to('ambulance').emit('ambulance:new-dispatch', newDispatchPayload);
 
-    // Also notify doctor room of status update
     io?.to('doctors').emit('case:updated', {
       caseId: caseSheet._id,
       status: caseSheet.status,
@@ -187,7 +177,6 @@ export const listDispatches = async (req, res, next) => {
       filter.status = status;
     }
 
-    // If ambulance user, filter by their ambulance profile unless they want all
     if (req.user.role === 'ambulance') {
       const myProfile = await Ambulance.findOne({ userId: req.user._id });
       if (myProfile) {
@@ -234,7 +223,6 @@ export const updateDispatchStatus = async (req, res, next) => {
     if (notes) dispatch.notes = notes;
     await dispatch.save();
 
-    // Update linked ambulance status
     if (dispatch.ambulanceId) {
       const ambulance = await Ambulance.findById(dispatch.ambulanceId);
       if (ambulance) {
@@ -249,7 +237,6 @@ export const updateDispatchStatus = async (req, res, next) => {
       }
     }
 
-    // Emit socket event
     const io = req.app.get('io');
     const statusUpdatePayload = {
       dispatchId: dispatch._id,

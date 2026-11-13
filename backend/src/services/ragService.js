@@ -8,9 +8,6 @@ const STOP_WORDS = new Set([
   'mujhe', 'ho', 'hai', 'mera', 'meri', 'mere', 'ko', 'se', 'me', 'aur', 'ka', 'ke', 'ki'
 ]);
 
-/**
- * Tokenizes and normalizes input text into keywords
- */
 export const tokenize = (text = '') => {
   if (typeof text !== 'string') return [];
   return text
@@ -20,9 +17,6 @@ export const tokenize = (text = '') => {
     .filter((token) => token.length > 1 && !STOP_WORDS.has(token));
 };
 
-/**
- * Computes TF-IDF / Keyword relevance score between query and a KB entry
- */
 export const scoreRule = (rule, queryTokens, rawQuery) => {
   const queryLower = rawQuery.toLowerCase();
   let score = 0;
@@ -30,13 +24,11 @@ export const scoreRule = (rule, queryTokens, rawQuery) => {
 
   const triggers = (rule.keywordTriggers || []).map((t) => String(t).toLowerCase().trim());
 
-  // 1. Exact trigger phrase match (high priority)
   for (const trigger of triggers) {
     if (queryLower.includes(trigger)) {
       score += 15;
       matchedTriggers.push(trigger);
     } else {
-      // Partial token match within trigger
       const triggerTokens = tokenize(trigger);
       for (const qt of queryTokens) {
         if (triggerTokens.includes(qt)) {
@@ -48,7 +40,6 @@ export const scoreRule = (rule, queryTokens, rawQuery) => {
     }
   }
 
-  // 2. Advice matches (General Tips, Dietary Notes, Safe Remedies)
   const advice = rule.verifiedAdvice || {};
   const allAdviceText = [
     ...(advice.generalTips || []),
@@ -69,12 +60,6 @@ export const scoreRule = (rule, queryTokens, rawQuery) => {
   return { score, matchedTriggers: [...new Set(matchedTriggers)] };
 };
 
-/**
- * Retrieves the most relevant KnowledgeBase entries for the given user intake text.
- * @param {string} userText - The text query or symptoms from the patient.
- * @param {number} topK - Maximum number of entries to return (default 3).
- * @returns {Promise<Array>} List of scored KnowledgeBase documents.
- */
 export const retrieveRelevantKnowledge = async (userText, topK = 3) => {
   if (!userText || typeof userText !== 'string' || !userText.trim()) {
     return [];
@@ -85,7 +70,6 @@ export const retrieveRelevantKnowledge = async (userText, topK = 3) => {
     return [];
   }
 
-  // Fetch all active KnowledgeBase entries
   const activeRules = await KnowledgeBase.find({ active: true }).lean();
   if (!activeRules || activeRules.length === 0) {
     return [];
@@ -104,15 +88,11 @@ export const retrieveRelevantKnowledge = async (userText, topK = 3) => {
     }
   }
 
-  // Sort by score descending
   scoredRules.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
   return scoredRules.slice(0, topK);
 };
 
-/**
- * Formats retrieved KnowledgeBase entries into a structured grounding context for the LLM.
- */
 export const formatGroundingContext = (retrievedRules) => {
   if (!retrievedRules || retrievedRules.length === 0) {
     return '';
@@ -141,21 +121,16 @@ export const formatGroundingContext = (retrievedRules) => {
   return context;
 };
 
-/**
- * Extracts citations from AI generated reply matching the retrieved rule IDs.
- */
 export const extractCitations = (aiReply = '', retrievedRules = []) => {
   const citedRuleIds = new Set();
   const ruleIdStrings = retrievedRules.map((r) => String(r._id));
 
-  // Match direct hex ObjectIds that exist in retrieved rules
   for (const id of ruleIdStrings) {
     if (aiReply.includes(id)) {
       citedRuleIds.add(id);
     }
   }
 
-  // Regex match patterns like [Ref: Rule <id>], [Rule: <id>], [KB Rule <id>]
   const citationRegex = /(?:\[(?:Ref|Source|Rule|KB Rule):?\s*|Rule\s*#?)([a-f0-9]{24})/gi;
   let match;
   while ((match = citationRegex.exec(aiReply)) !== null) {

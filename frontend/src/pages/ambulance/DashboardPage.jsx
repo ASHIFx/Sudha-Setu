@@ -28,7 +28,6 @@ export default function AmbulanceDashboardPage() {
       const { data } = await api.get('/ambulance/me/profile');
       setProfile(data.ambulance);
     } catch (err) {
-      // Admin might not have an ambulance profile
       if (user?.role !== 'admin') {
         console.warn('[ambulance] Could not fetch ambulance profile:', err.message);
       }
@@ -51,7 +50,6 @@ export default function AmbulanceDashboardPage() {
     fetchDispatches();
   }, [fetchProfile, fetchDispatches]);
 
-  // Socket event listeners
   const socketRef = useSocket({
     'ambulance:new-dispatch': (payload) => {
       toast.error('🚨 New Emergency Dispatch Assigned!', { duration: 6000 });
@@ -68,7 +66,6 @@ export default function AmbulanceDashboardPage() {
     },
   });
 
-  // Join ambulance room on connect
   useEffect(() => {
     const socket = socketRef.current;
     if (socket) {
@@ -142,7 +139,6 @@ export default function AmbulanceDashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header Profile Bar */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-200">
@@ -175,7 +171,6 @@ export default function AmbulanceDashboardPage() {
         </div>
       </div>
 
-      {/* Active Emergencies Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -258,7 +253,6 @@ export default function AmbulanceDashboardPage() {
                   )}
                 </div>
 
-                {/* Dispatch Action Buttons */}
                 <div className="flex items-center gap-3 pt-2">
                   {dispatch.status === 'dispatched' && (
                     <button
@@ -294,7 +288,6 @@ export default function AmbulanceDashboardPage() {
         )}
       </div>
 
-      {/* Completed / Past Dispatches */}
       {pastDispatches.length > 0 && (
         <div className="space-y-4 pt-6">
           <h2 className="text-lg font-bold text-slate-700">

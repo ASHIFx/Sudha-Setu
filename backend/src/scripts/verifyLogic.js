@@ -2,7 +2,6 @@ import { tokenize, scoreRule, extractCitations, formatGroundingContext } from '.
 
 console.log('🧪 Testing RAG Service Functions...\n');
 
-// 1. Test Tokenization
 const tokens = tokenize('Patient has severe fever, headache and jvara since two days');
 console.log('Tokens:', tokens);
 if (tokens.includes('severe') && tokens.includes('fever') && tokens.includes('headache') && tokens.includes('jvara')) {
@@ -11,7 +10,6 @@ if (tokens.includes('severe') && tokens.includes('fever') && tokens.includes('he
   console.error('❌ Tokenization failed');
 }
 
-// 2. Test Scoring against simulated KB rule
 const mockRule = {
   _id: '64d9f80123456789abcdef01',
   keywordTriggers: ['fever', 'jvara', 'pyrexia'],
@@ -34,7 +32,6 @@ if (score > 0 && matchedTriggers.includes('fever')) {
   console.error('❌ KB Rule Scoring failed');
 }
 
-// 3. Test Grounding Context Formatting
 const context = formatGroundingContext([{ ...mockRule, relevanceScore: score }]);
 console.log('\n--- Grounding Context Output ---\n' + context + '\n--------------------------------\n');
 if (context.includes('64d9f80123456789abcdef01') && context.includes('Shrita Sheeta Jala')) {
@@ -43,7 +40,6 @@ if (context.includes('64d9f80123456789abcdef01') && context.includes('Shrita She
   console.error('❌ Grounding context formatting failed');
 }
 
-// 4. Test Citation Extraction
 const aiReply = 'For your fever, please drink boiled warm water [Ref: Rule 64d9f80123456789abcdef01] and take light soup.';
 const citations = extractCitations(aiReply, [mockRule]);
 console.log('Citations extracted:', citations);

@@ -23,7 +23,6 @@ export default function SosOverlay({ caseId, onDismiss }) {
   };
 
   useEffect(() => {
-    // Automatically trigger real backend dispatch on SOS
     triggerDispatch();
 
     const timer = setInterval(() => {

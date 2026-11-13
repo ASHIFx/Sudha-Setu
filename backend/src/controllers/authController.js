@@ -35,18 +35,6 @@ const issueTokensAndRespond = async (res, user, statusCode = 200) => {
   res.status(statusCode).json({ user: toPublicUser(user) });
 };
 
-const issueTokensAndRespondRedirect = async (res, user) => {
-  const accessToken = generateAccessToken(user._id, user.role);
-  const refreshToken = generateRefreshToken(user._id);
-
-  user.refreshToken = hashToken(refreshToken);
-  await user.save({ validateBeforeSave: false });
-
-  setTokenCookies(res, accessToken, refreshToken);
-
-  res.redirect(process.env.CLIENT_URL || '/');
-};
-
 const generateOtpCode = () => String(crypto.randomInt(100000, 999999));
 
 const sendOtpFor = async (user, purpose) => {
@@ -255,14 +243,6 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-export const googleCallback = async (req, res, next) => {
-  try {
-    await issueTokensAndRespondRedirect(res, req.user);
-  } catch (err) {
-    next(err);
-  }
-};
-
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body ?? {};
@@ -274,7 +254,7 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
     if (user && !user.password) {
-      return res.status(400).json({ message: 'This account uses Google sign-in, not a password' });
+      return res.status(400).json({ message: 'No password set for this account. Please use password reset.' });
     }
 
     if (!user || !(await user.matchPassword(password))) {

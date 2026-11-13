@@ -39,10 +39,12 @@ const toMs = (expr) => {
 
 const cookieDefaults = () => {
   const isProd = process.env.NODE_ENV === 'production';
+  const configuredSameSite = (process.env.COOKIE_SAME_SITE || (isProd ? 'lax' : 'lax')).toLowerCase();
+  const secure = configuredSameSite === 'none' ? true : isProd;
   return {
     httpOnly: true,
-    secure: isProd,
-    sameSite: process.env.COOKIE_SAME_SITE || (isProd ? 'strict' : 'lax'),
+    secure,
+    sameSite: configuredSameSite,
     path: '/',
   };
 };

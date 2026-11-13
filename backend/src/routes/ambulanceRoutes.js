@@ -12,7 +12,6 @@ import { isAmbulance } from '../middlewares/roleMiddleware.js';
 
 const router = Router();
 
-// Routes protected by JWT authentication
 router.use(protect);
 
 router.get('/me/profile', isAmbulance, getMyAmbulanceProfile);

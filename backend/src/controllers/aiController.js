@@ -64,7 +64,6 @@ export const chat = async (req, res, next) => {
 
     const priorMessages = chatDoc.messages.slice(0, -1);
 
-    // Step 1: RAG Retrieval - Fetch relevant KnowledgeBase entries
     let retrievedRules = [];
     try {
       retrievedRules = await retrieveRelevantKnowledge(message.trim(), 3);
@@ -72,7 +71,6 @@ export const chat = async (req, res, next) => {
       console.warn('[aiController] RAG retrieval error:', ragErr.message);
     }
 
-    // Step 2: Grounded Gemini generation with citations
     let replyText = FALLBACK_REPLY;
     let citedRules = [];
 
