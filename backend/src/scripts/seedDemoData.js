@@ -12,22 +12,52 @@ const DEMO_PASSWORD = 'DemoPass@123';
 
 const DEMO_HOSPITALS = [
   {
-    name: 'All India Institute of Medical Sciences (AIIMS)',
-    location: { lat: 28.5672, lng: 77.2100 },
-    phone: '011-26588500',
-    emergencyCapable: true,
-  },
-  {
-    name: 'Safdarjung Emergency & Super-Specialty Hospital',
-    location: { lat: 28.5700, lng: 77.2078 },
-    phone: '011-26165060',
-    emergencyCapable: true,
-  },
-  {
     name: 'All India Institute of Ayurveda (AIIA) Apex Hospital',
     location: { lat: 28.5298, lng: 77.2917 },
     phone: '011-29997108',
     emergencyCapable: true,
+    city: 'New Delhi',
+    address: 'Mathura Road, Gautam Puri, Sarita Vihar, New Delhi',
+    accreditation: 'NABH Accredited Apex Teaching Hospital',
+    specialties: ['Panchakarma Center of Excellence', 'Kayachikitsa (Internal Medicine)', 'Shalya Tantra', 'Pediatric Kaumarbhritya'],
+    inpatientBeds: 200,
+    panchakarmaUnits: 16,
+  },
+  {
+    name: 'Chaudhary Brahm Prakash Ayurved Sansthan',
+    location: { lat: 28.5670, lng: 76.9530 },
+    phone: '011-25318301',
+    emergencyCapable: true,
+    city: 'South West Delhi',
+    address: 'Khera Dabar, Najafgarh, New Delhi',
+    accreditation: 'NABH Super-Specialty Ayurveda Center',
+    specialties: ['Specialized Panchakarma Detox', 'Sandhigata Vata & Joint Care', 'Metabolic Lifestyle Disorders', 'Kriya Kalpa Eye Clinic'],
+    inpatientBeds: 210,
+    panchakarmaUnits: 14,
+  },
+  {
+    name: 'Kottakkal Arya Vaidya Sala Clinical Research Hospital',
+    location: { lat: 28.5700, lng: 77.2078 },
+    phone: '011-24651700',
+    emergencyCapable: false,
+    city: 'Central Delhi',
+    address: 'B-Block, South Extension Part II, New Delhi',
+    accreditation: 'Classical Kerala Panchakarma & Research Facility',
+    specialties: ['Kerala Traditional Panchakarma', 'Dravyaguna Herbology', 'Neurological Rehabilitation', 'Spine & Musculoskeletal Wellness'],
+    inpatientBeds: 80,
+    panchakarmaUnits: 10,
+  },
+  {
+    name: 'Safdarjung Emergency Trauma & Integrative Medicine Wing',
+    location: { lat: 28.5700, lng: 77.2078 },
+    phone: '011-26165060',
+    emergencyCapable: true,
+    city: 'New Delhi',
+    address: 'Ring Road, Opposite AIIMS, New Delhi',
+    accreditation: 'NABH Level-1 Trauma & Clinical Triage Center',
+    specialties: ['24x7 Emergency Care & Fleet Dispatch', 'Critical Resuscitation', 'Integrative Emergency Triage', 'Ambulance Command Base'],
+    inpatientBeds: 500,
+    panchakarmaUnits: 4,
   },
 ];
 
@@ -191,7 +221,7 @@ export const seedDemo = async () => {
     }
 
     const hospitalOps = DEMO_HOSPITALS.map((h) =>
-      Hospital.findOneAndUpdate({ name: h.name }, h, { upsert: true, new: true })
+      Hospital.findOneAndUpdate({ name: h.name }, h, { upsert: true, returnDocument: 'after' })
     );
     const hospitals = await Promise.all(hospitalOps);
     console.log(`🏥 Seeded ${hospitals.length} emergency-capable hospitals.`);

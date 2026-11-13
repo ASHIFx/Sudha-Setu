@@ -1,9 +1,10 @@
 import Doctor from '../models/Doctor.js';
 import Ambulance from '../models/Ambulance.js';
+import Hospital from '../models/Hospital.js';
 
 export const getDirectory = async (_req, res, next) => {
   try {
-    const [doctors, ambulances] = await Promise.all([
+    const [doctors, ambulances, hospitals] = await Promise.all([
       Doctor.find({ verified: true })
         .populate('userId', 'name email phone languagePreference')
         .sort({ yearsOfExperience: -1 })
@@ -12,6 +13,7 @@ export const getDirectory = async (_req, res, next) => {
         .populate('userId', 'name phone')
         .sort({ status: 1 })
         .lean(),
+      Hospital.find().sort({ name: 1 }).lean(),
     ]);
 
     const formattedDoctors = doctors.map((d) => ({
@@ -24,6 +26,9 @@ export const getDirectory = async (_req, res, next) => {
       experienceYears: d.yearsOfExperience || 0,
       verified: d.verified,
       available: true,
+      degree: 'BAMS, MD (Ayurveda)',
+      consultationFee: 500,
+      city: 'New Delhi',
       languages: d.userId?.languagePreference === 'hi' ? ['Hindi', 'English'] : ['English', 'Hindi'],
       opdTiming: '09:00 AM - 05:00 PM IST',
     }));
@@ -38,9 +43,24 @@ export const getDirectory = async (_req, res, next) => {
       operatorPhone: a.userId?.phone || '112',
     }));
 
+    const formattedHospitals = hospitals.map((h) => ({
+      id: h._id,
+      name: h.name,
+      phone: h.phone,
+      location: h.location,
+      emergencyCapable: h.emergencyCapable,
+      city: h.city || 'New Delhi',
+      address: h.address || 'Central Healthcare Complex',
+      accreditation: h.accreditation || 'NABH Accredited Center of Excellence',
+      specialties: h.specialties?.length ? h.specialties : ['Kayachikitsa', 'Panchakarma', 'Emergency Triage', 'Shalya Tantra'],
+      inpatientBeds: h.inpatientBeds || 120,
+      panchakarmaUnits: h.panchakarmaUnits || 8,
+    }));
+
     res.json({
       doctors: formattedDoctors,
       ambulances: formattedAmbulances,
+      hospitals: formattedHospitals,
     });
   } catch (err) {
     next(err);

@@ -1,309 +1,252 @@
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { ArrowRight, ChevronRight, Mic, CheckCircle2, ShieldCheck, Activity, Stethoscope, Truck, Database } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Sparkles, Stethoscope, Building2, HeartPulse, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
-  const user = useSelector((s) => s.auth.user);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleAskAI = (e) => {
+    e?.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) {
+      navigate('/intake');
+      return;
+    }
+
+    const qLower = query.toLowerCase();
+    if (qLower.includes('doctor') || qLower.includes('vaidya')) {
+      navigate('/doctors');
+    } else if (qLower.includes('hospital') || qLower.includes('clinic') || qLower.includes('panchakarma')) {
+      navigate('/hospitals');
+    } else if (qLower.includes('medicine') || qLower.includes('churna') || qLower.includes('vati')) {
+      navigate('/medicines');
+    } else {
+      navigate('/intake', { state: { prefilledText: query } });
+    }
+  };
+
+  const handlePopularChip = (label, action) => {
+    if (action === 'doctors') navigate('/doctors');
+    else if (action === 'hospitals') navigate('/hospitals');
+    else if (action === 'medicines') navigate('/medicines');
+    else if (action === 'intake') navigate('/intake');
+    else {
+      setSearchQuery(label);
+      navigate('/intake', { state: { prefilledText: `I am experiencing ${label}. Please assess my symptoms.` } });
+    }
+  };
 
   return (
-    <div className="flex flex-col bg-[#0B0F19] min-h-screen text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
-      <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-28 border-b border-slate-800/80 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none -z-0" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Next-Gen Voice Health Triage</span>
-              </div>
+    <div className="bg-[#04150E] min-h-[calc(100vh-4rem)] text-slate-100 flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full space-y-8">
+        <div className="bg-[#062016]/90 border border-[#124731] rounded-3xl p-6 sm:p-10 lg:p-12 backdrop-blur-2xl shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-1/4 w-[600px] h-[350px] bg-emerald-500/10 blur-[130px] rounded-full pointer-events-none -z-0" />
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                Intelligent Voice Triage & <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">Clinical Care</span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-slate-400 max-w-2xl leading-relaxed">
-                Describe symptoms by voice or text in Hindi or English. Sudha Setu performs instant clinical risk evaluation, generates personalized dietary regimens, streams critical cases to doctors, and dispatches ambulances for high-risk emergencies.
-              </p>
-
-              <div className="flex flex-wrap gap-3 pt-2">
-                {user ? (
-                  <Link
-                    to={
-                      user.role === 'admin'
-                        ? '/admin/dashboard'
-                        : user.role === 'ambulance'
-                        ? '/ambulance/dashboard'
-                        : ['doctor', 'support'].includes(user.role)
-                        ? '/doctor/dashboard'
-                        : '/intake'
-                    }
-                    className="btn-primary px-6 py-3.5 text-sm font-semibold shadow-lg shadow-emerald-500/20"
-                  >
-                    <span>Launch {user.role.toUpperCase()} Console</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/intake"
-                      className="btn-primary px-6 py-3.5 text-sm font-semibold shadow-lg shadow-emerald-500/20"
-                    >
-                      <span>Start Symptom Triage</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <Link
-                      to="/login"
-                      className="btn-secondary px-6 py-3.5 text-sm font-semibold"
-                    >
-                      <span>Clinician Portal</span>
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              <div className="pt-6 border-t border-slate-800/80 flex flex-wrap items-center gap-6 text-xs text-slate-400 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Hindi & English Voice
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 3-Tier Clinical Safety
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Automated Fleet Dispatch
-                </span>
-              </div>
+          <div className="max-w-3xl space-y-6 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0B2E20] border border-[#1A5C40] text-emerald-300 text-xs font-semibold tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>AYURVEDA × TECHNOLOGY × A HEALTHIER TOMORROW</span>
             </div>
 
-            <div className="lg:col-span-5 bg-slate-900/90 rounded-2xl p-6 shadow-2xl border border-slate-800 backdrop-blur-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                    Live Clinical Intake
-                  </span>
-                </div>
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">hi-IN Audio Feed</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-bold text-white tracking-tight leading-[1.15]">
+              Bridging Wisdom With Intelligent Healthcare
+            </h1>
+
+            <p className="text-sm sm:text-base text-emerald-100/70 max-w-2xl leading-relaxed">
+              Turning ancient Ayurvedic wisdom into clearer health understanding. Consult our AI assistant, explore verified doctors, hospitals, and classical remedies.
+            </p>
+
+            <form onSubmit={handleAskAI} className="pt-2">
+              <div className="relative flex items-center max-w-2xl bg-[#04150E]/90 border border-[#124731] focus-within:border-emerald-500/70 rounded-2xl p-1.5 shadow-2xl transition-colors">
+                <Search className="w-5 h-5 text-emerald-400/60 ml-3.5 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search symptoms (e.g. knee pain, acidity), doctors, or remedies..."
+                  className="w-full bg-transparent border-none px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-emerald-100/40 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>Ask AI</span>
+                </button>
               </div>
+            </form>
 
-              <div className="space-y-3">
-                <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                      <Mic className="w-3.5 h-3.5" /> Voice Input Transcribed
-                    </span>
-                    <span className="text-emerald-400 font-mono">98.4% Confidence</span>
-                  </div>
-                  <p className="text-sm text-slate-200 italic leading-relaxed">
-                    "दो दिनों से तेज बुखार है, सिर में लगातार भारी दर्द है और गले में खराश है।"
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800/80">
-                    <span className="text-slate-400 text-[11px] block">Constitutional Pattern</span>
-                    <span className="font-bold text-emerald-300 mt-0.5 block">Pitta-Vata Predominance</span>
-                  </div>
-                  <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800/80">
-                    <span className="text-slate-400 text-[11px] block">Metabolic State (Agni)</span>
-                    <span className="font-bold text-amber-300 mt-0.5 block">Tikshna (Intense)</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-amber-300 uppercase tracking-wide">
-                      Tier 2: Medium Risk (Amber)
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">
-                      Doctor OPD Queue
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-200/90 leading-relaxed">
-                    Symptom severity requires human physician review. Queued to Dr. Sharma with verified clinical dietary regimen.
-                  </p>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              <span className="font-bold text-emerald-400 uppercase tracking-wider text-[11px] mr-1">
+                POPULAR:
+              </span>
+              {[
+                { label: 'Joint Stiffness', action: 'symptom' },
+                { label: 'Hyperacidity', action: 'symptom' },
+                { label: 'Find Doctors', action: 'doctors' },
+                { label: 'Panchakarma', action: 'hospitals' },
+                { label: 'Herbal Medicines', action: 'medicines' },
+                { label: 'Ask Charak AI', action: 'intake' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => handlePopularChip(chip.label, chip.action)}
+                  className="px-3 py-1 rounded-lg bg-[#062016] hover:bg-[#0B2E20] text-emerald-100/80 hover:text-white border border-[#124731] hover:border-emerald-500/40 transition-colors text-xs font-medium cursor-pointer"
+                >
+                  {chip.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      </section>
 
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">Clinical Architecture</p>
-          <h2 className="text-3xl font-black text-white tracking-tight">
-            The 3-Tier Clinical Triage Engine
-          </h2>
-          <p className="text-sm text-slate-400 leading-relaxed">
-            Every symptom description is evaluated against deterministic safety rules to prioritize emergency cases and reduce hospital wait times.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/60 rounded-xl border border-emerald-500/30 p-6 shadow-xl shadow-black/20 backdrop-blur-md flex flex-col justify-between space-y-4 hover:border-emerald-500/50 transition-colors">
-            <div className="space-y-3">
-              <span className="badge-green font-semibold">Tier 1: Low Risk</span>
-              <h3 className="text-lg font-bold text-white">Verified Self-Care & Dietary Guidance</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Mild, temporary symptoms receive authentic home remedies, dietary protocols (Ahara), and lifestyle balance tips with zero pharmaceutical intervention.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
-              Instant audio voice playback & downloadable consultation PDF.
-            </div>
-          </div>
-
-          <div className="bg-slate-900/60 rounded-xl border border-amber-500/40 p-6 shadow-xl shadow-black/20 backdrop-blur-md flex flex-col justify-between space-y-4 hover:border-amber-500/60 transition-colors">
-            <div className="space-y-3">
-              <span className="badge-amber font-semibold">Tier 2: Medium Risk</span>
-              <h3 className="text-lg font-bold text-white">Doctor OPD Priority Queue</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Persistent or severe symptoms stream directly into the licensed doctor consultation console with pre-extracted metabolic and constitutional markers.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
-              Real-time WebSocket OPD alerts & clinical e-prescriptions.
-            </div>
-          </div>
-
-          <div className="bg-slate-900/60 rounded-xl border border-rose-500/40 p-6 shadow-xl shadow-black/20 backdrop-blur-md flex flex-col justify-between space-y-4 hover:border-rose-500/60 transition-colors">
-            <div className="space-y-3">
-              <span className="badge-red font-semibold">Tier 3: High Risk</span>
-              <h3 className="text-lg font-bold text-white">Emergency Hospital & Fleet Dispatch</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Critical triggers (cardiac flags, acute distress) auto-calculate the nearest hospital by GPS and immediately dispatch active ambulance units.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 text-xs text-slate-400">
-              Immediate hospital routing & 112 emergency hotline link.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-slate-950/60 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="max-w-2xl space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">Core Capabilities</p>
-            <h2 className="text-3xl font-black text-white tracking-tight">
-              Engineered for Modern Clinical Workflows
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-2.5 p-6 bg-slate-900/40 rounded-xl border border-slate-800">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
-                <Mic className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-white text-base">Multilingual Voice Input</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Speak naturally in Hindi or English. Web Speech synthesis and recognition provide accessible healthcare for diverse patient demographics.
-              </p>
-            </div>
-
-            <div className="space-y-2.5 p-6 bg-slate-900/40 rounded-xl border border-slate-800">
-              <div className="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-3">
-                <Database className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-white text-base">Grounded Clinical Knowledge</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                RAG retrieval matches symptom tokens against verified clinical guidelines. Every recommendation embeds traceable reference citations.
-              </p>
-            </div>
-
-            <div className="space-y-2.5 p-6 bg-slate-900/40 rounded-xl border border-slate-800">
-              <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-3">
-                <Truck className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-white text-base">Hospital & Fleet Dispatch</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Automated Haversine geolocation matches patients with nearest emergency medical centers while streaming coordinates to on-duty ambulances.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h2 className="text-xl font-bold text-white">Explore Platform Consoles</h2>
-          <span className="text-xs text-slate-500 font-mono">Role Access</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <Link
             to="/intake"
-            className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
+            className="bg-[#062016]/90 border border-[#124731] hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl backdrop-blur-xl flex flex-col justify-between space-y-4 transition-all hover:-translate-y-0.5 group"
           >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">Patient Triage</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  VOICE & TEXT AI
+                </span>
+              </div>
+              <h2 className="text-lg font-serif font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Charak Vaani
+              </h2>
+              <p className="text-xs text-emerald-100/70 leading-relaxed">
+                AI consultation for real-time symptom analysis, dosha prakriti balance, and personalized home remedies.
+              </p>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Describe symptoms via voice or text with instant clinical categorization.
-            </p>
+            <div className="pt-2 flex items-center text-xs font-bold text-emerald-400 gap-1.5 group-hover:translate-x-1 transition-transform">
+              <span>Start Consultation</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          <Link
+            to="/doctors"
+            className="bg-[#062016]/90 border border-[#124731] hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl backdrop-blur-xl flex flex-col justify-between space-y-4 transition-all hover:-translate-y-0.5 group"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Stethoscope className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  VERIFIED NETWORK
+                </span>
+              </div>
+              <h2 className="text-lg font-serif font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Ayurveda Doctors
+              </h2>
+              <p className="text-xs text-emerald-100/70 leading-relaxed">
+                Find experienced BAMS & MD Ayurvedic practitioners by specialty, city, and consultation fee.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center text-xs font-bold text-emerald-400 gap-1.5 group-hover:translate-x-1 transition-transform">
+              <span>Browse Doctors</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          <Link
+            to="/hospitals"
+            className="bg-[#062016]/90 border border-[#124731] hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl backdrop-blur-xl flex flex-col justify-between space-y-4 transition-all hover:-translate-y-0.5 group"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  NABH & CLINICS
+                </span>
+              </div>
+              <h2 className="text-lg font-serif font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Ayurveda Hospitals
+              </h2>
+              <p className="text-xs text-emerald-100/70 leading-relaxed">
+                Explore premier Ayurvedic healthcare centers, specialized Panchakarma clinics, and wellness retreats.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center text-xs font-bold text-emerald-400 gap-1.5 group-hover:translate-x-1 transition-transform">
+              <span>Explore Hospitals</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+
+          <Link
+            to="/diseases"
+            className="bg-[#062016]/90 border border-[#124731] hover:border-emerald-500/50 rounded-2xl p-6 shadow-xl backdrop-blur-xl flex flex-col justify-between space-y-4 transition-all hover:-translate-y-0.5 group"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <HeartPulse className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  CLINICAL DIRECTORY
+                </span>
+              </div>
+              <h2 className="text-lg font-serif font-bold text-white group-hover:text-emerald-300 transition-colors">
+                Diseases & Symptoms
+              </h2>
+              <p className="text-xs text-emerald-100/70 leading-relaxed">
+                Authentic guidance on 15+ acute & chronic conditions with dosha imbalances, remedies, and red flags.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center text-xs font-bold text-emerald-400 gap-1.5 group-hover:translate-x-1 transition-transform">
+              <span>View Atlas</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      <nav className="w-full border-t border-[#124731] bg-[#062016]/95 backdrop-blur-md py-3 px-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-center sm:justify-between gap-2 overflow-x-auto">
+          <Link
+            to="/"
+            className="px-6 py-2 rounded-full text-xs font-bold bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30 transition-all whitespace-nowrap"
+          >
+            Home
+          </Link>
+
+          <Link
+            to="/hospitals"
+            className="px-5 py-2 rounded-full text-xs font-semibold text-emerald-100/70 hover:text-white hover:bg-[#0B2E20] transition-colors whitespace-nowrap"
+          >
+            Hospitals
+          </Link>
+
+          <Link
+            to="/doctors"
+            className="px-5 py-2 rounded-full text-xs font-semibold text-emerald-100/70 hover:text-white hover:bg-[#0B2E20] transition-colors whitespace-nowrap"
+          >
+            Doctors
+          </Link>
+
+          <Link
+            to="/diseases"
+            className="px-5 py-2 rounded-full text-xs font-semibold text-emerald-100/70 hover:text-white hover:bg-[#0B2E20] transition-colors whitespace-nowrap"
+          >
+            Diseases
           </Link>
 
           <Link
             to="/medicines"
-            className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
+            className="px-5 py-2 rounded-full text-xs font-semibold text-emerald-100/70 hover:text-white hover:bg-[#0B2E20] transition-colors whitespace-nowrap"
           >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">Medicines Directory</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Browse classical Churnas, Rasayanas, active botanicals, and clinical indications.
-            </p>
-          </Link>
-
-          <Link
-            to="/providers"
-            className="card hover:border-teal-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-teal-400 transition-colors">Doctors & Fleet</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors" />
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Live roster of verified practitioners and active emergency ambulance vehicles.
-            </p>
-          </Link>
-
-          <Link
-            to="/doctor/dashboard"
-            className="card hover:border-emerald-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-emerald-400 transition-colors">Doctor OPD</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Live consultation queue with Agni, Prakriti, and digital prescriptions.
-            </p>
-          </Link>
-
-          <Link
-            to="/admin/dashboard"
-            className="card hover:border-teal-500/50 hover:bg-slate-900 transition-all p-5 space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm group-hover:text-teal-400 transition-colors">Admin Console</h3>
-              <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-teal-400 transition-colors" />
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Platform telemetry, doctor credentialing, and fleet orchestration.
-            </p>
+            Medicines
           </Link>
         </div>
-      </section>
-
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-semibold text-slate-300">Sudha Setu • Voice Health Triage Platform</p>
-          <p className="text-slate-500">MERN Stack • Socket.IO • Web Speech API • Clinical Safety Protocol</p>
-        </div>
-      </footer>
+      </nav>
     </div>
   );
 }

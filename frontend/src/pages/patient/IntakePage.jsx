@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { Mic, MicOff, Send, RotateCcw, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api.js';
@@ -10,6 +11,13 @@ import SosOverlay from '../../components/ui/SosOverlay.jsx';
 const LANGUAGE_OPTIONS = [
   { value: 'hi-IN', label: 'हिन्दी (Hindi)', api: 'hi' },
   { value: 'en-IN', label: 'English (India)', api: 'en' },
+];
+
+const QUICK_SCENARIOS = [
+  { label: '👋 Greeting ("Hii")', text: 'Hii there! How does this health triage assistant work?' },
+  { label: '🌿 Low Risk (Digestion)', text: 'Mild indigestion and bloating after eating dinner with slight acidity.' },
+  { label: '🩺 Medium Risk (OPD Fever)', text: 'Continuous high fever for 3 days with severe headache and throat irritation.' },
+  { label: '🚨 High Risk (Emergency SOS)', text: 'Severe crushing chest pain radiating to left arm with extreme shortness of breath.' },
 ];
 
 function AudioCaptureBar({ listening, onClick, disabled }) {
@@ -57,6 +65,13 @@ export default function IntakePage() {
   const [result, setResult] = useState(null);
   const [sosActive, setSosActive] = useState(false);
   const locationRef = useRef(null);
+  const routeLocation = useLocation();
+
+  useEffect(() => {
+    if (routeLocation.state?.prefilledText) {
+      setTextInput(routeLocation.state.prefilledText);
+    }
+  }, [routeLocation.state]);
 
   const onSpeechResult = useCallback((transcript) => {
     setTextInput(transcript);
@@ -185,6 +200,22 @@ export default function IntakePage() {
                 disabled={submitting}
                 maxLength={5000}
               />
+
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[11px] font-semibold text-slate-400">Presentation Quick Scenarios:</span>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_SCENARIOS.map((q, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setTextInput(q.text)}
+                      className="px-2.5 py-1 text-xs bg-slate-800/80 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/40 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-2">

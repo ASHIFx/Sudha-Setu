@@ -20,17 +20,10 @@ export default function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleSelectDemo = (preset) => {
-    setEmail(preset.email);
-    setPassword(preset.pass);
-    toast.success(`Loaded credentials for ${preset.label}`);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !password) return;
+  const performLogin = async (loginEmail, loginPass) => {
+    if (!loginEmail || !loginPass) return;
     setLoading(true);
-    const result = await dispatch(loginUser({ email: email.trim(), password }));
+    const result = await dispatch(loginUser({ email: loginEmail.trim(), password: loginPass }));
     setLoading(false);
     if (loginUser.fulfilled.match(result)) {
       const user = result.payload;
@@ -49,6 +42,17 @@ export default function LoginPage() {
     }
   };
 
+  const handleSelectDemo = (preset) => {
+    setEmail(preset.email);
+    setPassword(preset.pass);
+    performLogin(preset.email, preset.pass);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    performLogin(email, password);
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-[#0B0F19]">
       <div className="w-full max-w-md space-y-5">
@@ -65,8 +69,8 @@ export default function LoginPage() {
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-xl space-y-5">
           <div className="border-b border-slate-800 pb-3 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">Demo Role Quick-Fill:</span>
-              <span className="text-emerald-400 font-mono text-[11px]">1-Click load</span>
+              <span className="font-semibold text-slate-300">Demo Instant Login:</span>
+              <span className="text-emerald-400 font-mono text-[11px]">1-Click Enter</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {DEMO_PRESETS.map((p) => (

@@ -16,6 +16,9 @@ import AdminDashboardPage from './pages/admin/DashboardPage.jsx';
 import ProfilePage from './pages/profile/ProfilePage.jsx';
 import MedicinesPage from './pages/medicines/MedicinesPage.jsx';
 import ProvidersPage from './pages/directory/ProvidersPage.jsx';
+import HospitalsPage from './pages/directory/HospitalsPage.jsx';
+import DoctorsPage from './pages/directory/DoctorsPage.jsx';
+import DiseasesPage from './pages/directory/DiseasesPage.jsx';
 import Spinner from './components/ui/Spinner.jsx';
 
 function RoleRedirect() {
@@ -49,6 +52,9 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/hospitals" element={<HospitalsPage />} />
+          <Route path="/doctors" element={<DoctorsPage />} />
+          <Route path="/diseases" element={<DiseasesPage />} />
           <Route path="/medicines" element={<MedicinesPage />} />
           <Route path="/providers" element={<ProvidersPage />} />
           <Route path="/login" element={<LoginPage />} />

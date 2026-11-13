@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { LogOut, User, Pill, Users, Stethoscope } from 'lucide-react';
+import { LogOut, User, Globe, Sparkles, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { logoutUser } from '../../store/authSlice.js';
 
@@ -9,6 +10,8 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [lang, setLang] = useState('English');
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -19,173 +22,181 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
+    <header className="sticky top-0 z-40 bg-[#04150E]/90 backdrop-blur-md border-b border-[#124731]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-black text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-              S
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 p-[1.5px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform flex items-center justify-center">
+              <div className="w-full h-full bg-[#04150E] rounded-full flex items-center justify-center">
+                <span className="text-emerald-300 font-serif font-black text-sm">ॐ</span>
+              </div>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
-                  Sudha Setu
-                </span>
-                <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 hidden sm:inline-block">
-                  Health Triage
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 hidden md:block -mt-0.5">Voice Consultation & Smart Dispatch</p>
+              <span className="text-lg font-serif font-bold tracking-widest text-white group-hover:text-emerald-300 transition-colors uppercase">
+                Sudha Setu
+              </span>
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center gap-1 border-l border-slate-800 pl-4">
+          <nav className="hidden md:flex items-center gap-1 border-l border-[#124731] pl-6 text-xs font-semibold">
+            <Link
+              to="/hospitals"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                isActive('/hospitals')
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                  : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
+              }`}
+            >
+              Hospitals
+            </Link>
+
+            <Link
+              to="/doctors"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                isActive('/doctors')
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                  : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
+              }`}
+            >
+              Doctors
+            </Link>
+
+            <Link
+              to="/diseases"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                isActive('/diseases')
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                  : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
+              }`}
+            >
+              Diseases
+            </Link>
+
             <Link
               to="/medicines"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
                 isActive('/medicines')
-                  ? 'bg-slate-800 text-emerald-400 border border-slate-700'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                  : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
               }`}
             >
-              <Pill className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Medicines</span>
+              Medicines
             </Link>
 
             <Link
-              to="/providers"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                isActive('/providers')
-                  ? 'bg-slate-800 text-emerald-400 border border-slate-700'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              to="/intake"
+              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                isActive('/intake')
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-teal-400" />
-              <span>Doctors & Fleet</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Charak Vaani</span>
             </Link>
-          </div>
+          </nav>
         </div>
 
-        <nav className="flex items-center gap-2 sm:gap-3">
-          <Link
-            to="/medicines"
-            className={`md:hidden p-2 rounded-lg text-xs font-semibold transition-colors ${
-              isActive('/medicines') ? 'text-emerald-400' : 'text-slate-400'
-            }`}
-            title="Medicines"
-          >
-            <Pill className="w-4 h-4" />
-          </Link>
-          <Link
-            to="/providers"
-            className={`md:hidden p-2 rounded-lg text-xs font-semibold transition-colors ${
-              isActive('/providers') ? 'text-teal-400' : 'text-slate-400'
-            }`}
-            title="Doctors & Fleet"
-          >
-            <Users className="w-4 h-4" />
-          </Link>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-100/80 bg-[#062016] border border-[#124731] hover:border-emerald-500/40 transition-colors cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{lang}</span>
+              <ChevronDown className="w-3 h-3 text-emerald-400/70" />
+            </button>
 
-          {user ? (
-            <>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {user.role === 'admin' && (
-                  <Link
-                    to="/admin/dashboard"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      isActive('/admin/dashboard')
-                        ? 'bg-slate-800 text-white border border-slate-700'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                    }`}
-                  >
-                    Admin Hub
-                  </Link>
-                )}
-
-                {user.role === 'ambulance' && (
-                  <Link
-                    to="/ambulance/dashboard"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      isActive('/ambulance/dashboard')
-                        ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                        : 'text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20'
-                    }`}
-                  >
-                    Ambulance Console
-                  </Link>
-                )}
-
-                {['doctor', 'support'].includes(user.role) && (
-                  <Link
-                    to="/doctor/dashboard"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      isActive('/doctor/dashboard')
-                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                    }`}
-                  >
-                    Doctor OPD
-                  </Link>
-                )}
-
-                {user.role === 'patient' && (
-                  <Link
-                    to="/intake"
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      isActive('/intake')
-                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                        : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20'
-                    }`}
-                  >
-                    Start Triage
-                  </Link>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 pl-3 border-l border-slate-800">
-                <Link
-                  to="/profile"
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    isActive('/profile')
-                      ? 'bg-slate-800 text-emerald-400 border border-slate-700'
-                      : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-                  }`}
-                  title="View Profile & Records"
-                >
-                  <User className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">{user.name?.split(' ')[0]}</span>
-                  <span className="text-[10px] font-semibold uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    {user.role}
-                  </span>
-                </Link>
-
+            {showLangMenu && (
+              <div className="absolute right-0 mt-1 w-32 bg-[#062016] border border-[#124731] rounded-xl shadow-2xl py-1 z-50">
                 <button
-                  onClick={handleLogout}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Sign out"
-                  aria-label="Sign out"
+                  type="button"
+                  onClick={() => { setLang('English'); setShowLangMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLang('हिन्दी'); setShowLangMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
+                >
+                  हिन्दी (Hindi)
                 </button>
               </div>
-            </>
+            )}
+          </div>
+
+          {user ? (
+            <div className="flex items-center gap-2">
+              {user.role === 'admin' && (
+                <Link
+                  to="/admin/dashboard"
+                  className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#062016] text-emerald-200 border border-[#124731] hover:bg-[#0B2E20]"
+                >
+                  Admin Hub
+                </Link>
+              )}
+
+              {user.role === 'ambulance' && (
+                <Link
+                  to="/ambulance/dashboard"
+                  className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white shadow-md shadow-rose-600/30"
+                >
+                  Ambulance
+                </Link>
+              )}
+
+              {['doctor', 'support'].includes(user.role) && (
+                <Link
+                  to="/doctor/dashboard"
+                  className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                >
+                  Doctor OPD
+                </Link>
+              )}
+
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#062016] border border-[#124731] hover:border-emerald-500/40 text-xs font-medium text-white transition-colors"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-[10px]">
+                  {user.name?.[0] || 'U'}
+                </div>
+                <div className="text-left leading-tight hidden sm:block">
+                  <span className="block font-bold text-white text-[11px] truncate max-w-[100px]">{user.name}</span>
+                  <span className="block text-[10px] text-emerald-400 capitalize">{user.role}</span>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg text-emerald-100/60 hover:text-white hover:bg-[#062016] transition-colors cursor-pointer"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-100/80 hover:text-white hover:bg-[#062016] transition-colors"
               >
                 Sign In
               </Link>
               <Link
-                to="/register"
-                className="btn-primary py-1.5 px-3.5 text-xs font-semibold"
+                to="/login"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 transition-colors"
               >
                 Get Started
               </Link>
             </div>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
