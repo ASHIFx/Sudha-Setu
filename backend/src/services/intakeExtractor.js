@@ -1,53 +1,47 @@
-﻿import { GoogleGenAI } from '@google/genai';
-
-const MODEL = 'gemini-3.5-flash-lite';
-
-let _client = null;
-
-const getClient = () => {
-  if (_client) return _client;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey.includes('your_actual')) return null;
-  _client = new GoogleGenAI({ apiKey });
-  return _client;
-};
-
-export const extractIntakeData = async (patientText) => {
-  const client = getClient();
-  if (!client || !patientText?.trim()) {
+﻿export const extractIntakeData = async (patientText) => {
+  const text = String(patientText || '').trim();
+  if (!text) {
     return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };
   }
 
-  const prompt = `Extract clinical symptom data and Ayurvedic markers from this patient description:
-"${patientText}"
+  const lower = text.toLowerCase();
+  const symptoms = [];
 
-Respond ONLY with valid JSON in this format:
-{
-  "symptoms": [{"name": "string", "duration": "string", "severity": number}],
-  "ayurvedicMarkers": {
-    "suspectedPrakriti": "vata" | "pitta" | "kapha" | "vata-pitta" | "pitta-kapha" | "vata-kapha" | "tridosha" | "unknown",
-    "agniStatus": "sama" | "vishama" | "tikshna" | "manda" | "unknown",
-    "dietHabits": "string or empty",
-    "sleepPattern": "string or empty"
+  const CLINICAL_MAPPINGS = [
+    { name: 'Chest Pain / Angina', regex: /(chest pain|crushing pain|left arm pain|heart attack)/i, severity: 3 },
+    { name: 'Fever / Pyrexia', regex: /(fever|high temperature|chills|shivering|bukhar)/i, severity: 2 },
+    { name: 'Breathing Difficulty', regex: /(breathless|cannot breathe|difficulty breathing|shortness of breath)/i, severity: 3 },
+    { name: 'Acidity / Heartburn', regex: /(acidity|acid reflux|heartburn|burning stomach|gas|indigestion|amlapitta)/i, severity: 1 },
+    { name: 'Headache / Cephalea', regex: /(headache|head pain|migraine|shirahshoola|sar dard)/i, severity: 1 },
+    { name: 'Cough & Cold', regex: /(cough|sore throat|throat pain|phlegm|cold|kasa|pratishyaya)/i, severity: 1 },
+    { name: 'Joint Pain & Stiffness', regex: /(joint pain|knee pain|arthritis|stiffness|sandhivata|amavata)/i, severity: 2 },
+    { name: 'Abdominal Cramps', regex: /(stomach pain|belly pain|stomach ache|pet dard|cramp)/i, severity: 2 },
+    { name: 'Fatigue & Weakness', regex: /(weakness|tiredness|fatigue|exhaustion|kamzori)/i, severity: 1 },
+  ];
+
+  for (const item of CLINICAL_MAPPINGS) {
+    if (item.regex.test(lower)) {
+      symptoms.push({ name: item.name, duration: 'recent', severity: item.severity });
+    }
   }
-}`;
 
-  try {
-    const res = await client.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: { responseMimeType: 'application/json' },
-    });
+  let suspectedPrakriti = 'unknown';
+  if (/(joint pain|constipation|gas|dry|tremor|vata)/i.test(lower)) suspectedPrakriti = 'vata';
+  else if (/(burning|acidity|fever|heat|rash|pitta)/i.test(lower)) suspectedPrakriti = 'pitta';
+  else if (/(congestion|cough|heavy|mucus|cold|kapha)/i.test(lower)) suspectedPrakriti = 'kapha';
 
-    const data = JSON.parse(res.text);
-    return {
-      symptoms: Array.isArray(data.symptoms)
-        ? data.symptoms.filter((s) => s && typeof s.name === 'string')
-        : [],
-      ayurvedicMarkers: data.ayurvedicMarkers || { suspectedPrakriti: 'unknown', agniStatus: 'unknown' },
-    };
-  } catch (err) {
-    console.warn('[extractor] extraction skipped:', err.message);
-    return { symptoms: [], ayurvedicMarkers: { suspectedPrakriti: 'unknown', agniStatus: 'unknown' } };
-  }
+  let agniStatus = 'unknown';
+  if (/(burning|severe acidity|fast burning)/i.test(lower)) agniStatus = 'tikshna';
+  else if (/(irregular|bloating|cramping)/i.test(lower)) agniStatus = 'vishama';
+  else if (/(heavy|sluggish digestion|loss of appetite)/i.test(lower)) agniStatus = 'manda';
+
+  return {
+    symptoms,
+    ayurvedicMarkers: {
+      suspectedPrakriti,
+      agniStatus,
+      dietHabits: '',
+      sleepPattern: '',
+    },
+  };
 };

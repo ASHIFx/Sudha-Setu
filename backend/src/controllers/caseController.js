@@ -27,28 +27,19 @@ export const intakeCase = async (req, res, next) => {
         .json({ message: `patientText must be ${MAX_TEXT_LENGTH} characters or fewer` });
     }
 
-    let aiSymptoms = [];
-    let aiMarkers = {};
-
-    try {
-      const extracted = await extractIntakeData(patientText);
-      aiSymptoms = extracted.symptoms;
-      aiMarkers = extracted.ayurvedicMarkers;
-    } catch (extractErr) {
-      console.error('[intake] AI extraction failed, continuing without it:', extractErr.message);
-    }
-
-    const resolvedSymptoms = Array.isArray(symptoms) && symptoms.length > 0
-      ? symptoms
-      : aiSymptoms;
-
-    const resolvedMarkers = {
-      ...aiMarkers,
-      ...(ayurvedicMarkers ?? {}),
-    };
-
     const assessment = await analyzeSymptoms(patientText, languageUsed);
     const status = statusForAssessment(assessment);
+
+    let resolvedSymptoms = Array.isArray(symptoms) && symptoms.length > 0 ? symptoms : [];
+    let resolvedMarkers = { ...(ayurvedicMarkers ?? {}) };
+
+    if (!assessment.isGreeting && !assessment.isGibberish) {
+      if (resolvedSymptoms.length === 0) {
+        const extracted = await extractIntakeData(patientText);
+        resolvedSymptoms = extracted.symptoms;
+        resolvedMarkers = { ...extracted.ayurvedicMarkers, ...resolvedMarkers };
+      }
+    }
 
     const caseSheet = await CaseSheet.create({
       patientId: req.user._id,
@@ -62,7 +53,7 @@ export const intakeCase = async (req, res, next) => {
       location: location?.lat != null && location?.lng != null ? location : undefined,
     });
 
-    if (caseSheet.dangerLevel !== 'low' || status === 'pending_doctor') {
+    if (!assessment.isGreeting && !assessment.isGibberish && (caseSheet.dangerLevel !== 'low' || status === 'pending_doctor')) {
       req.app.get('io')?.to('doctors').emit('case:new', {
         caseId: caseSheet._id,
         dangerLevel: caseSheet.dangerLevel,

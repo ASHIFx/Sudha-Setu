@@ -2,6 +2,26 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../lib/api.js';
 import { disconnectSocket } from '../lib/socket.js';
 
+const USER_KEY = 'sudha_setu_user';
+
+const getStoredUser = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const storeUser = (u) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (u) localStorage.setItem(USER_KEY, JSON.stringify(u));
+    else localStorage.removeItem(USER_KEY);
+  } catch {}
+};
+
 export const fetchMe = createAsyncThunk(
   'auth/fetchMe',
   async (_, { rejectWithValue }) => {
@@ -15,7 +35,7 @@ export const fetchMe = createAsyncThunk(
   {
     condition: (_, { getState }) => {
       const { auth } = getState();
-      return !auth.initialized && !auth.loading;
+      return !auth.loading;
     },
   }
 );
@@ -40,13 +60,14 @@ export const logoutUser = createAsyncThunk('auth/logout', async () => {
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: null,
+    user: getStoredUser(),
     loading: false,
     initialized: false,
   },
   reducers: {
     setUser(state, action) {
       state.user = action.payload;
+      storeUser(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -58,17 +79,23 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.loading = false;
         state.initialized = true;
+        storeUser(action.payload);
       })
       .addCase(fetchMe.rejected, (state) => {
         state.user = null;
         state.loading = false;
         state.initialized = true;
+        storeUser(null);
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.initialized = true;
+        storeUser(action.payload);
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.initialized = true;
+        storeUser(null);
       });
   },
 });

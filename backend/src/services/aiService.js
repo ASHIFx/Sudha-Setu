@@ -4,7 +4,7 @@ import {
   extractCitations,
 } from './ragService.js';
 
-const MODEL = 'gemini-3.5-flash-lite';
+const MODELS = ['gemini-3.5-flash'];
 
 const BASE_SYSTEM_INSTRUCTION =
   'You are Sudha Setu AI, an intelligent clinical health triage and wellness assistant. ' +
@@ -72,33 +72,47 @@ Clinical Guidelines:
 - If input is mild or conversational wellness, set "dangerLevel": "low", "requiresHumanReview": false.
 - Translate all tips, dietary notes, safe remedies, and clinicalSummary into the target language: "${languageUsed}" (e.g. if mr: Marathi, if hi: Hindi, if bn: Bengali, if ta: Tamil, if en: English).`;
 
-  try {
-    const response = await client.models.generateContent({
-      model: MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      },
+  const withTimeout = (promise, ms = 2500) => {
+    let timer;
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('LLM response timeout')), ms);
     });
+    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
+  };
 
-    const parsed = JSON.parse(response.text);
-    return {
-      isGibberish: Boolean(parsed.isGibberish),
-      isGreeting: Boolean(parsed.isGreeting),
-      dangerLevel: parsed.dangerLevel || 'low',
-      confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.85,
-      requiresHumanReview: Boolean(parsed.requiresHumanReview),
-      clinicalSummary: typeof parsed.clinicalSummary === 'string' ? parsed.clinicalSummary : '',
-      verifiedAdvice: {
-        generalTips: Array.isArray(parsed.generalTips) ? parsed.generalTips : [],
-        ayurvedicDietaryNotes: Array.isArray(parsed.ayurvedicDietaryNotes) ? parsed.ayurvedicDietaryNotes : [],
-        safeRemedies: Array.isArray(parsed.safeRemedies) ? parsed.safeRemedies : [],
-      },
-    };
-  } catch (err) {
-    console.warn('[aiService] LLM assessment fallback:', err.message);
-    return null;
+  for (const model of MODELS) {
+    try {
+      const response = await withTimeout(
+        client.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+          },
+        }),
+        2500
+      );
+
+      const parsed = JSON.parse(response.text);
+      return {
+        isGibberish: Boolean(parsed.isGibberish),
+        isGreeting: Boolean(parsed.isGreeting),
+        dangerLevel: parsed.dangerLevel || 'low',
+        confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.85,
+        requiresHumanReview: Boolean(parsed.requiresHumanReview),
+        clinicalSummary: typeof parsed.clinicalSummary === 'string' ? parsed.clinicalSummary : '',
+        verifiedAdvice: {
+          generalTips: Array.isArray(parsed.generalTips) ? parsed.generalTips : [],
+          ayurvedicDietaryNotes: Array.isArray(parsed.ayurvedicDietaryNotes) ? parsed.ayurvedicDietaryNotes : [],
+          safeRemedies: Array.isArray(parsed.safeRemedies) ? parsed.safeRemedies : [],
+        },
+      };
+    } catch (err) {
+      console.warn(`[aiService] ${model} attempt failed: ${err.message}`);
+    }
   }
+
+  return null;
 };
 
 export const sendChatMessage = async (storedMessages, userMessage, { retrievedRules = [] } = {}) => {
@@ -115,26 +129,34 @@ export const sendChatMessage = async (storedMessages, userMessage, { retrievedRu
     ? `${BASE_SYSTEM_INSTRUCTION}\n\n${groundingContext}`
     : BASE_SYSTEM_INSTRUCTION;
 
-  const chat = client.chats.create({
-    model: MODEL,
-    config: {
-      systemInstruction: fullSystemInstruction,
-    },
-    history: priorHistory,
-  });
+  for (const model of MODELS) {
+    try {
+      const chat = client.chats.create({
+        model,
+        config: {
+          systemInstruction: fullSystemInstruction,
+        },
+        history: priorHistory,
+      });
 
-  const response = await chat.sendMessage({ message: userMessage });
-  const replyText = response.text || '';
-  const citedRules = extractCitations(replyText, retrievedRules);
+      const response = await chat.sendMessage({ message: userMessage });
+      const replyText = response.text || '';
+      const citedRules = extractCitations(replyText, retrievedRules);
 
-  return {
-    text: replyText,
-    citedRules,
-    retrievedRules: retrievedRules.map((r) => ({
-      _id: r._id,
-      keywordTriggers: r.keywordTriggers,
-      dangerClassification: r.dangerClassification,
-      relevanceScore: r.relevanceScore,
-    })),
-  };
+      return {
+        text: replyText,
+        citedRules,
+        retrievedRules: retrievedRules.map((r) => ({
+          _id: r._id,
+          keywordTriggers: r.keywordTriggers,
+          dangerClassification: r.dangerClassification,
+          relevanceScore: r.relevanceScore,
+        })),
+      };
+    } catch (err) {
+      console.warn(`[aiService] chat ${model} failed: ${err.message}`);
+    }
+  }
+
+  throw new Error('All Gemini models failed to generate chat response');
 };

@@ -1,7 +1,12 @@
+import mongoose from 'mongoose';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 
 export const retrieveRelevantKnowledge = async (userText, topK = 3) => {
   if (!userText || typeof userText !== 'string' || !userText.trim()) {
+    return [];
+  }
+
+  if (mongoose.connection.readyState !== 1) {
     return [];
   }
 

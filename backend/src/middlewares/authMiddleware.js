@@ -2,7 +2,6 @@ import { verifyAccessToken } from '../config/jwt.js';
 import User from '../models/User.js';
 
 export const protect = async (req, res, next) => {
-  
   let token = req.cookies?.accessToken;
 
   if (!token) {
@@ -13,14 +12,17 @@ export const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorised: no token provided' });
+    const hasRefresh = Boolean(req.cookies?.refreshToken);
+    return res.status(401).json({
+      message: 'Not authorised: no token provided',
+      code: hasRefresh ? 'TOKEN_EXPIRED' : 'NO_TOKEN',
+    });
   }
 
   let payload;
   try {
     payload = verifyAccessToken(token);
   } catch (err) {
-    
     const expired = err.name === 'TokenExpiredError';
     return res.status(401).json({
       message: expired ? 'Session expired, please log in again' : 'Not authorised: invalid token',
@@ -42,7 +44,6 @@ export const authorize = (...allowedRoles) => {
 
   return (req, res, next) => {
     if (!req.user) {
-      
       return next(new Error('authorize() requires protect() to run first'));
     }
 

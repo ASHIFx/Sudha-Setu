@@ -1,8 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import Spinner from '../ui/Spinner.jsx';
 
 export default function ProtectedRoute({ children, allowedRoles = [] }) {
-  const user = useSelector((s) => s.auth.user);
+  const { user, initialized, loading } = useSelector((s) => s.auth);
+
+  if (!initialized && loading && !user) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   if (!user) return <Navigate to="/login" replace />;
 

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import KnowledgeBase, { DANGER_LEVELS } from '../models/KnowledgeBase.js';
 import { assessSymptomWithLLM } from './aiService.js';
 import { retrieveRelevantKnowledge } from './ragService.js';
@@ -6,21 +7,29 @@ export const LOW_CONFIDENCE_THRESHOLD = 0.55;
 
 const LEVEL_RANK = { low: 1, medium: 2, high: 3 };
 
-const GREETING_PATTERN = /^(hi+|hello|hey+|namaste|namaskar|pranam|good\s*(morning|evening|afternoon)|hola|test|testing|kya\s*haal|kaise\s*ho|how\s*are\s*you)(\s+(there|doctor|doc|ji|bhai|sir|mam|friend|charak|vaani))?[\s!.,?]*$/i;
+const GREETING_PATTERN = /^(hi+|hlw|hlo|helo|hello+|hey+|heyy+|hy+|haai|hie|hiya|yo|wassup|what'?s\s*up|sup|namaste|namaskar|namaskara|pranam|pranaam|vanakkam|kemon\s*acho|kem\s*cho|radhe\s*radhe|ram\s*ram|jai\s*shri\s*krishna|salaam|salam|adaab|good\s*(morning|evening|afternoon|day)|hola|kya\s*haal|kaise\s*ho|how\s*are\s*you|how\s*r\s*u|kaisa\s*hai|kaisi\s*hai)(\s+(there|doctor|doc|ji|bhai|sir|mam|madam|friend|charak|vaani|team|everyone))?[\s!.,?]*$/i;
 
-const GIBBERISH_REGEX = /^(asdf+|qwert+|zxcv+|ghjk+|jkl;+|1234+|5678+|aaaa+|bbbb+|cccc+|dddd+|ffff+|gggg+|hhhh+|jjjj+|kkkk+|xxxx+|zzzz+|[a-z]{0,3})$/i;
+const isGreetingText = (str = '') => {
+  const clean = str.trim();
+  if (!clean) return true;
+  return GREETING_PATTERN.test(clean);
+};
+
+const MEDICAL_WHITELIST = /\b(fever|pain|ache|cold|cough|vomit|diarrhea|rash|itch|chills|dizzy|nausea|burn|gas|acidity|headache|stomach|throat|chest|breath|breathing|infection|bleed|bleeding|injury|swelling|cramp|cramps|constipation|piles|bp|sugar|pressure|heart|weakness|tired|fatigue|sleep|insomnia|allergy|flu|dengue|malaria|covid|asthma|ulcer|boil|wound|bukhar|dard|khansi|sar dard|pet dard|gale me|sardi|ulti|dast|jalan|chakkar|kamzori|khujli)\b/i;
 
 const isGibberishText = (str = '') => {
   const clean = str.trim();
   if (clean.length < 2) return true;
+  if (isGreetingText(clean)) return false;
+  if (MEDICAL_WHITELIST.test(clean)) return false;
   if (/^[\d\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(clean)) return true;
-  if (GIBBERISH_REGEX.test(clean)) return true;
-  if (!/\s/.test(clean) && clean.length > 14) {
-    const vowels = (clean.match(/[aeiouy\u0904-\u0914\u093E-\u094C\u0985-\u0994\u09BE-\u09CC\u0B85-\u0B94\u0BBE-\u0BCC]/gi) || []).length;
-    if (vowels / clean.length < 0.15 || vowels / clean.length > 0.85) return true;
-  }
-  const uniqueChars = new Set(clean.replace(/\s+/g, '')).size;
-  if (clean.length > 5 && uniqueChars <= 2) return true;
+  if (/(qwerty|asdfgh|zxcvbn|12345|67890|poiuy|lkjhg|mnbvc)/i.test(clean)) return true;
+  if (/[bcdfghjklmnpqrstvwxyz]{5,}/i.test(clean)) return true;
+  if (/(.)\1{3,}/.test(clean)) return true;
+  if (clean.length > 5 && new Set(clean.toLowerCase().replace(/[^a-z0-9]/g, '')).size <= 2) return true;
+  if (/^(test|testing|sample|check|checking|blah|random)(\s+(test|testing|sample|check|blah|random))*$/i.test(clean)) return true;
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length >= 3 && words.every((w) => /[bcdfghjklmnpqrstvwxyz]{4,}/i.test(w) || w.length > 12)) return true;
   return false;
 };
 
@@ -142,24 +151,7 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     };
   }
 
-  if (isGibberishText(text)) {
-    return {
-      dangerLevel: 'low',
-      confidenceScore: 0.1,
-      isGibberish: true,
-      requiresHumanReview: false,
-      reason: 'unintelligible_gibberish',
-      verifiedAdvice: {
-        generalTips: ['Please describe actual health symptoms so Charak Vaani can assist you properly.'],
-        ayurvedicDietaryNotes: [],
-        safeRemedies: [],
-      },
-      matchedKeywords: [],
-      matchedRuleIds: [],
-    };
-  }
-
-  if (GREETING_PATTERN.test(text)) {
+  if (isGreetingText(text)) {
     const greetingData = GREETING_RESPONSES[normalizedLang] || GREETING_RESPONSES.en;
     return {
       dangerLevel: 'low',
@@ -179,10 +171,29 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     };
   }
 
-  const ragRules = await retrieveRelevantKnowledge(text, 4);
+  if (isGibberishText(text)) {
+    return {
+      dangerLevel: 'low',
+      confidenceScore: 0.1,
+      isGibberish: true,
+      requiresHumanReview: false,
+      reason: 'unintelligible_gibberish',
+      verifiedAdvice: {
+        generalTips: ['Please describe actual physical health symptoms (e.g. fever, headache, stomach pain) so Charak Vaani can assist you properly.'],
+        ayurvedicDietaryNotes: [],
+        safeRemedies: [],
+      },
+      matchedKeywords: [],
+      matchedRuleIds: [],
+    };
+  }
+
+  const ragRules = await retrieveRelevantKnowledge(text, 4).catch(() => []);
 
   const lowerText = text.toLowerCase();
-  const rules = await KnowledgeBase.find({ active: true }).lean();
+  const rules = mongoose.connection.readyState === 1
+    ? await KnowledgeBase.find({ active: true }).lean().catch(() => [])
+    : [];
 
   const matches = [];
   for (const rule of rules) {
@@ -259,8 +270,69 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
     };
   }
 
+  if (matches.length > 0) {
+    let highestLevel = 'low';
+    for (const m of matches) {
+      if (LEVEL_RANK[m.rule.dangerClassification] > LEVEL_RANK[highestLevel]) {
+        highestLevel = m.rule.dangerClassification;
+      }
+    }
+
+    const winningMatches = matches.filter((m) => m.rule.dangerClassification === highestLevel);
+    const matchedKeywords = [...new Set(winningMatches.flatMap((m) => m.hits))];
+    const matchedRuleIds = winningMatches.map((m) => String(m.rule._id));
+
+    const confidenceScore = Math.min(0.95, 0.6 + matchedKeywords.length * 0.1);
+    const requiresHumanReview = highestLevel !== 'low' || confidenceScore < LOW_CONFIDENCE_THRESHOLD;
+
+    const adviceLists = { generalTips: [], ayurvedicDietaryNotes: [], safeRemedies: [] };
+    for (const m of winningMatches) {
+      if (m.rule.verifiedAdvice) {
+        adviceLists.generalTips.push(...(m.rule.verifiedAdvice.generalTips || []));
+        adviceLists.ayurvedicDietaryNotes.push(...(m.rule.verifiedAdvice.ayurvedicDietaryNotes || []));
+        adviceLists.safeRemedies.push(...(m.rule.verifiedAdvice.safeRemedies || []));
+      }
+    }
+
+    const verifiedAdvice = {
+      generalTips: [...new Set(adviceLists.generalTips)],
+      ayurvedicDietaryNotes: [...new Set(adviceLists.ayurvedicDietaryNotes)],
+      safeRemedies: [...new Set(adviceLists.safeRemedies)],
+    };
+
+    const hasAdvice = Object.values(verifiedAdvice).some((arr) => arr.length > 0);
+
+    return {
+      dangerLevel: highestLevel,
+      confidenceScore: Math.round(confidenceScore * 100) / 100,
+      verifiedAdvice: hasAdvice ? verifiedAdvice : defaultSelfCareAdvice(normalizedLang),
+      matchedKeywords,
+      matchedRuleIds,
+      requiresHumanReview,
+      reason: 'rule_matched',
+    };
+  }
+
   const isEmergency = /(chest pain|heart attack|unconscious|cannot breathe|heavy bleeding|stroke|seizure)/i.test(text);
-  const hasSymptom = /(fever|pain|ache|cough|vomit|diarrhea|rash|chills|dizzy)/i.test(text);
+  const hasSymptom = MEDICAL_WHITELIST.test(text) || /(fever|pain|ache|cough|vomit|diarrhea|rash|chills|dizzy)/i.test(text);
+
+  if (!isEmergency && !hasSymptom) {
+    return {
+      dangerLevel: 'low',
+      confidenceScore: 0.1,
+      isGibberish: true,
+      requiresHumanReview: false,
+      reason: 'no_symptoms_detected',
+      verifiedAdvice: {
+        generalTips: ['No physical symptoms were detected. Please describe your health problem (e.g. fever, headache, or stomach discomfort) so Charak Vaani can assist you.'],
+        ayurvedicDietaryNotes: [],
+        safeRemedies: [],
+      },
+      matchedKeywords: [],
+      matchedRuleIds: [],
+    };
+  }
+
   const danger = isEmergency ? 'high' : hasSymptom ? 'medium' : 'low';
 
   return {
@@ -274,49 +346,8 @@ export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   };
 };
 
-  let highestLevel = 'low';
-  for (const m of matches) {
-    if (LEVEL_RANK[m.rule.dangerClassification] > LEVEL_RANK[highestLevel]) {
-      highestLevel = m.rule.dangerClassification;
-    }
-  }
-
-  const winningMatches = matches.filter((m) => m.rule.dangerClassification === highestLevel);
-  const matchedKeywords = [...new Set(winningMatches.flatMap((m) => m.hits))];
-  const matchedRuleIds = winningMatches.map((m) => String(m.rule._id));
-
-  const confidenceScore = Math.min(0.95, 0.6 + matchedKeywords.length * 0.1);
-  const requiresHumanReview = highestLevel !== 'low' || confidenceScore < LOW_CONFIDENCE_THRESHOLD;
-
-  const adviceLists = { generalTips: [], ayurvedicDietaryNotes: [], safeRemedies: [] };
-  for (const m of winningMatches) {
-    if (m.rule.verifiedAdvice) {
-      adviceLists.generalTips.push(...(m.rule.verifiedAdvice.generalTips || []));
-      adviceLists.ayurvedicDietaryNotes.push(...(m.rule.verifiedAdvice.ayurvedicDietaryNotes || []));
-      adviceLists.safeRemedies.push(...(m.rule.verifiedAdvice.safeRemedies || []));
-    }
-  }
-
-  const verifiedAdvice = {
-    generalTips: [...new Set(adviceLists.generalTips)],
-    ayurvedicDietaryNotes: [...new Set(adviceLists.ayurvedicDietaryNotes)],
-    safeRemedies: [...new Set(adviceLists.safeRemedies)],
-  };
-
-  const hasAdvice = Object.values(verifiedAdvice).some((arr) => arr.length > 0);
-
-  return {
-    dangerLevel: highestLevel,
-    confidenceScore: Math.round(confidenceScore * 100) / 100,
-    verifiedAdvice: hasAdvice ? verifiedAdvice : defaultSelfCareAdvice(),
-    matchedKeywords,
-    matchedRuleIds,
-    requiresHumanReview,
-    reason: 'rule_matched',
-  };
-};
-
-export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice }) => {
+export const statusForAssessment = ({ dangerLevel, confidenceScore, verifiedAdvice, isGreeting, isGibberish }) => {
+  if (isGreeting || isGibberish) return 'resolved_selfcare';
   if (dangerLevel === 'high') return 'emergency_alerted';
   if (dangerLevel === 'medium') return 'pending_doctor';
   if (confidenceScore >= LOW_CONFIDENCE_THRESHOLD && verifiedAdvice) {

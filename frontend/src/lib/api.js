@@ -17,6 +17,19 @@ const processQueue = (error) => {
   failedQueue = [];
 };
 
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/verify-otp',
+  '/forgot-password',
+  '/hospitals',
+  '/doctors',
+  '/diseases',
+  '/medicines',
+  '/providers',
+];
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -24,7 +37,7 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      error.response?.data?.code === 'TOKEN_EXPIRED' &&
+      (error.response?.data?.code === 'TOKEN_EXPIRED' || error.response?.data?.message?.includes('token')) &&
       !original._retry &&
       !original.url?.includes('/auth/refresh') &&
       !original.url?.includes('/auth/login')
@@ -46,7 +59,9 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr);
-        if (!isRedirectingToLogin && window.location.pathname !== '/login') {
+        const currentPath = window.location.pathname;
+        const isPublic = PUBLIC_PATHS.some((p) => p === currentPath || (p !== '/' && currentPath.startsWith(p)));
+        if (!isPublic && !original.url?.includes('/auth/me') && !isRedirectingToLogin && currentPath !== '/login') {
           isRedirectingToLogin = true;
           window.location.replace('/login');
         }
