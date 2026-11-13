@@ -59,8 +59,13 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'sudha-setu-api', env: NODE_ENV, uptime: process.uptime(), db: dbStatus });
 });
 
-app.use('/api', (req, res, next) => {
+app.use('/api', async (req, res, next) => {
   if (req.path === '/health') return next();
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch {}
+  }
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({
       success: false,

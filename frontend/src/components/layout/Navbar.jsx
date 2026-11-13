@@ -4,13 +4,15 @@ import { useSelector, useDispatch } from 'react-redux';
 import { LogOut, User, Globe, Sparkles, ChevronDown, Leaf } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { logoutUser } from '../../store/authSlice.js';
+import { useAppLanguage } from '../../lib/languageContext.js';
+import { SUPPORTED_LANGUAGES } from '../../lib/translations.js';
 
 export default function Navbar() {
   const user = useSelector((s) => s.auth.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [lang, setLang] = useState('English');
+  const { langCode, langObj, t, changeLanguage } = useAppLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   const handleLogout = async () => {
@@ -47,7 +49,7 @@ export default function Navbar() {
                   : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
               }`}
             >
-              Hospitals
+              {t.nav.hospitals}
             </Link>
 
             <Link
@@ -58,7 +60,7 @@ export default function Navbar() {
                   : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
               }`}
             >
-              Doctors
+              {t.nav.doctors}
             </Link>
 
             <Link
@@ -69,7 +71,7 @@ export default function Navbar() {
                   : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
               }`}
             >
-              Diseases
+              {t.nav.diseases}
             </Link>
 
             <Link
@@ -80,7 +82,7 @@ export default function Navbar() {
                   : 'text-emerald-100/70 hover:text-white hover:bg-[#062016]'
               }`}
             >
-              Medicines
+              {t.nav.medicines}
             </Link>
 
             <Link
@@ -92,7 +94,7 @@ export default function Navbar() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Charak Vaani</span>
+              <span>{t.nav.charakVaani}</span>
             </Link>
           </nav>
         </div>
@@ -105,26 +107,26 @@ export default function Navbar() {
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-100/80 bg-[#062016] border border-[#124731] hover:border-emerald-500/40 transition-colors cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{lang}</span>
+              <span>{langObj.label}</span>
               <ChevronDown className="w-3 h-3 text-emerald-400/70" />
             </button>
 
             {showLangMenu && (
               <div className="absolute right-0 mt-1 w-36 bg-[#062016] border border-[#124731] rounded-xl shadow-2xl py-1 z-50">
-                {[
-                  { label: 'English', code: 'en' },
-                  { label: 'हिन्दी (Hindi)', code: 'hi' },
-                  { label: 'বাংলা (Bengali)', code: 'bn' },
-                  { label: 'मराठी (Marathi)', code: 'mr' },
-                  { label: 'தமிழ் (Tamil)', code: 'ta' },
-                ].map((item) => (
+                {SUPPORTED_LANGUAGES.map((item) => (
                   <button
                     key={item.code}
                     type="button"
-                    onClick={() => { setLang(item.label.split(' ')[0]); setShowLangMenu(false); }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-white hover:bg-[#0B2E20] transition-colors"
+                    onClick={() => {
+                      changeLanguage(item.code);
+                      setShowLangMenu(false);
+                      toast.success(`Language set to ${item.fullName}`);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between ${
+                      langCode === item.code ? 'text-emerald-400 font-bold bg-[#0B2E20]' : 'text-white hover:bg-[#0B2E20]'
+                    }`}
                   >
-                    {item.label}
+                    <span>{item.fullName}</span>
                   </button>
                 ))}
               </div>
@@ -138,7 +140,7 @@ export default function Navbar() {
                   to="/admin/dashboard"
                   className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#062016] text-emerald-200 border border-[#124731] hover:bg-[#0B2E20]"
                 >
-                  Admin Hub
+                  {t.nav.adminHub}
                 </Link>
               )}
 
@@ -147,7 +149,7 @@ export default function Navbar() {
                   to="/ambulance/dashboard"
                   className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-white shadow-md shadow-rose-600/30"
                 >
-                  Ambulance
+                  {t.nav.ambulance}
                 </Link>
               )}
 
@@ -156,7 +158,7 @@ export default function Navbar() {
                   to="/doctor/dashboard"
                   className="hidden sm:inline-block px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
                 >
-                  Doctor OPD
+                  {t.nav.doctorOpd}
                 </Link>
               )}
 
@@ -188,13 +190,13 @@ export default function Navbar() {
                 to="/login"
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-100/80 hover:text-white hover:bg-[#062016] transition-colors"
               >
-                Sign In
+                {t.nav.signIn}
               </Link>
               <Link
                 to="/login"
                 className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 transition-colors"
               >
-                Get Started
+                {t.nav.getStarted}
               </Link>
             </div>
           )}

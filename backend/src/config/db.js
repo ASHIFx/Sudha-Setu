@@ -5,6 +5,7 @@ let reconnectTimer = null;
 let isShuttingDown = false;
 
 export const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
   if (connectionPromise) return connectionPromise;
 
   const uri = process.env.MONGO_URI;
@@ -21,6 +22,7 @@ export const connectDB = async () => {
       minPoolSize: 2,
     })
     .then((m) => {
+      connectionPromise = null;
       if (reconnectTimer) {
         clearInterval(reconnectTimer);
         reconnectTimer = null;

@@ -40,31 +40,37 @@ const getClient = () => {
   return _client;
 };
 
-export const assessSymptomWithLLM = async (patientText, languageUsed = 'en') => {
+export const assessSymptomWithLLM = async (patientText, languageUsed = 'en', retrievedRules = []) => {
   const client = getClient();
   if (!client) return null;
 
-  const prompt = `Analyze this user input for an intelligent health triage system.
-User Input: "${patientText}"
-Language: ${languageUsed}
+  const grounding = formatGroundingContext(retrievedRules);
+  const prompt = `You are Sudha Setu's clinical AI triage engine. Analyze this patient input.
+Patient Text: "${patientText}"
+Target Language: "${languageUsed}"
+
+${grounding ? `${grounding}\n\nGround your clinical advice and home remedies in the verified Knowledge Base entries above whenever relevant.` : ''}
 
 Respond ONLY with valid JSON having this exact structure:
 {
+  "isGibberish": true or false,
   "isGreeting": true or false,
   "dangerLevel": "low" or "medium" or "high",
   "confidenceScore": number between 0.6 and 0.98,
   "requiresHumanReview": true or false,
-  "generalTips": ["string tip 1", "string tip 2"],
-  "ayurvedicDietaryNotes": ["dietary tip 1", "dietary tip 2"],
-  "safeRemedies": ["safe home remedy or next step 1"]
+  "clinicalSummary": "concise explanation of condition and risk tier in ${languageUsed}",
+  "generalTips": ["tip 1 in ${languageUsed}", "tip 2 in ${languageUsed}"],
+  "ayurvedicDietaryNotes": ["diet tip 1 in ${languageUsed}", "diet tip 2 in ${languageUsed}"],
+  "safeRemedies": ["safe home remedy or herbal step in ${languageUsed}"]
 }
 
-Guidelines:
-- If input is a greeting or general phrase without symptoms (e.g., "hi", "hii", "hello", "namaste", "pranam", "how are you"), set isGreeting: true, dangerLevel: "low", requiresHumanReview: false.
-- If input indicates severe distress, chest pain, stroke, breathing collapse, or massive trauma, set dangerLevel: "high", requiresHumanReview: true.
-- If input describes persistent or moderate acute disease, set dangerLevel: "medium", requiresHumanReview: true.
-- If input is mild or conversational wellness, set dangerLevel: "low", requiresHumanReview: false.
-- Respond in the requested language: "${languageUsed}" (if hi: Hindi, if bn: Bengali, if mr: Marathi, if ta: Tamil, if en: English). Translate all strings in generalTips, ayurvedicDietaryNotes, and safeRemedies into this language.`;
+Clinical Guidelines:
+- If input is random keyboard characters, spam, repeated nonsense keys, or child typing without symptoms (e.g. "asdfasdf", "123123", "qwerty", "zzzzz"), set "isGibberish": true, "dangerLevel": "low", "requiresHumanReview": false.
+- If input is a greeting or general phrase without symptoms (e.g. "hi", "hii", "hello", "namaste", "vanakkam"), set "isGreeting": true, "dangerLevel": "low", "requiresHumanReview": false.
+- If input indicates severe distress, crushing chest pain, stroke, seizure, severe breathing collapse, or heavy bleeding, set "dangerLevel": "high", "requiresHumanReview": true.
+- If input describes persistent fever (>2-3 days), acute ongoing infection, or conditions needing doctor evaluation, set "dangerLevel": "medium", "requiresHumanReview": true.
+- If input is mild or conversational wellness, set "dangerLevel": "low", "requiresHumanReview": false.
+- Translate all tips, dietary notes, safe remedies, and clinicalSummary into the target language: "${languageUsed}" (e.g. if mr: Marathi, if hi: Hindi, if bn: Bengali, if ta: Tamil, if en: English).`;
 
   try {
     const response = await client.models.generateContent({
@@ -77,10 +83,12 @@ Guidelines:
 
     const parsed = JSON.parse(response.text);
     return {
+      isGibberish: Boolean(parsed.isGibberish),
+      isGreeting: Boolean(parsed.isGreeting),
       dangerLevel: parsed.dangerLevel || 'low',
       confidenceScore: typeof parsed.confidenceScore === 'number' ? parsed.confidenceScore : 0.85,
       requiresHumanReview: Boolean(parsed.requiresHumanReview),
-      isGreeting: Boolean(parsed.isGreeting),
+      clinicalSummary: typeof parsed.clinicalSummary === 'string' ? parsed.clinicalSummary : '',
       verifiedAdvice: {
         generalTips: Array.isArray(parsed.generalTips) ? parsed.generalTips : [],
         ayurvedicDietaryNotes: Array.isArray(parsed.ayurvedicDietaryNotes) ? parsed.ayurvedicDietaryNotes : [],
