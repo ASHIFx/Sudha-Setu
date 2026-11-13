@@ -81,6 +81,8 @@ export const intakeCase = async (req, res, next) => {
       matchedKeywords: assessment.matchedKeywords,
       emergency: assessment.dangerLevel === 'high',
       isGreeting: Boolean(assessment.isGreeting),
+      isGibberish: Boolean(assessment.isGibberish),
+      clinicalSummary: assessment.clinicalSummary || '',
       greetingTitle: assessment.greetingTitle || '',
       greetingMessage: assessment.greetingMessage || '',
     });
