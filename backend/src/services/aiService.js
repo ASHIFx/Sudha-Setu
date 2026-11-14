@@ -5,9 +5,10 @@ import {
 } from './ragService.js';
 
 const MODELS = [
-  process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+  'gemini-3.5-flash',
+  'gemini-flash-latest',
+  'gemini-3.5-transcribe',
 ];
 
 const BASE_SYSTEM_INSTRUCTION =
@@ -183,7 +184,14 @@ If spoken in Hindi, Marathi, Bengali, or Tamil, output in that language script o
 Do not summarize, reply, or add clinical commentary. Return ONLY the verbatim transcribed text.
 If there is only silence or background noise, reply with: [UNCLEAR]`;
 
-  for (const model of MODELS) {
+  const transcribeModels = [
+    process.env.GEMINI_TRANSCRIBE_MODEL || 'gemini-3.8-flash',
+    'gemini-3.5-transcribe',
+    'gemini-3.5-flash',
+    'gemini-flash-latest',
+  ];
+
+  for (const model of transcribeModels) {
     try {
       const response = await client.models.generateContent({
         model,
