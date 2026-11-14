@@ -33,16 +33,33 @@ const buildHistory = (storedMessages) =>
     parts: [{ text: m.content }],
   }));
 
-let _client = null;
+const getApiKeys = () => {
+  const combined = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEYS,
+    process.env.GOOGLE_API_KEY,
+  ]
+    .filter(Boolean)
+    .join(',');
+
+  return [...new Set(combined.split(',').map((k) => k.trim()).filter((k) => k && !k.includes('your_actual')))];
+};
+
+let _activeKeyIndex = 0;
 
 const getClient = () => {
-  if (_client) return _client;
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey.includes('your_actual')) {
-    return null;
+  const keys = getApiKeys();
+  if (keys.length === 0) return null;
+  const key = keys[_activeKeyIndex % keys.length];
+  return new GoogleGenAI({ apiKey: key });
+};
+
+const rotateKeyOnQuota = () => {
+  const keys = getApiKeys();
+  if (keys.length > 1) {
+    _activeKeyIndex = (_activeKeyIndex + 1) % keys.length;
+    console.log(`[aiService] Rotated to API key #${_activeKeyIndex + 1} of ${keys.length}`);
   }
-  _client = new GoogleGenAI({ apiKey });
-  return _client;
 };
 
 export const assessSymptomWithLLM = async (patientText, languageUsed = 'en', retrievedRules = []) => {
@@ -172,8 +189,8 @@ export const sendChatMessage = async (storedMessages, userMessage, { retrievedRu
 };
 
 export const transcribeAudioWithAI = async (audioBase64, mimeType = 'audio/webm', language = 'en') => {
-  const client = getClient();
-  if (!client) {
+  const keys = getApiKeys();
+  if (keys.length === 0) {
     throw new Error('Gemini API key is not configured on the server');
   }
 
@@ -191,33 +208,40 @@ If there is only silence or background noise, reply with: [UNCLEAR]`;
     'gemini-flash-latest',
   ];
 
-  for (const model of transcribeModels) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: audioBase64,
+  for (let k = 0; k < keys.length; k++) {
+    const client = getClient();
+    for (const model of transcribeModels) {
+      try {
+        const response = await client.models.generateContent({
+          model,
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType,
+                    data: audioBase64,
+                  },
                 },
-              },
-              { text: prompt },
-            ],
-          },
-        ],
-      });
+                { text: prompt },
+              ],
+            },
+          ],
+        });
 
-      const text = response.text ? response.text.trim() : '';
-      if (text && text !== '[UNCLEAR]') {
-        return text;
+        const text = response.text ? response.text.trim() : '';
+        if (text && text !== '[UNCLEAR]') {
+          return text;
+        }
+        return '';
+      } catch (err) {
+        if (err.message?.includes('429') || err.message?.includes('quota')) {
+          rotateKeyOnQuota();
+          break;
+        }
+        console.warn(`[aiService] Transcription with ${model} failed: ${err.message}`);
       }
-      return '';
-    } catch (err) {
-      console.warn(`[aiService] Transcription with ${model} failed: ${err.message}`);
     }
   }
 
