@@ -132,6 +132,15 @@ const GREETING_RESPONSES = {
   },
 };
 
+const defaultSelfCareAdvice = (lang = 'en') => {
+  const selected = GREETING_RESPONSES[lang] || GREETING_RESPONSES.en;
+  return {
+    generalTips: selected.generalTips || [],
+    ayurvedicDietaryNotes: selected.ayurvedicDietaryNotes || [],
+    safeRemedies: selected.safeRemedies || [],
+  };
+};
+
 export const analyzeSymptoms = async (patientText, languageUsed = 'en') => {
   const text = String(patientText || '').trim();
   const normalizedLang = ['hi', 'bn', 'mr', 'ta'].includes(languageUsed?.toLowerCase()) ? languageUsed.toLowerCase() : 'en';
