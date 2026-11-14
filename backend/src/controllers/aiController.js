@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Chat from '../models/Chat.js';
 import CaseSheet from '../models/CaseSheet.js';
-import { sendChatMessage } from '../services/aiService.js';
+import { sendChatMessage, transcribeAudioWithAI } from '../services/aiService.js';
 import { retrieveRelevantKnowledge } from '../services/ragService.js';
 
 const FALLBACK_REPLY =
@@ -135,5 +135,22 @@ export const getChatHistory = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const transcribeAudio = async (req, res) => {
+  try {
+    const { audioData, mimeType, language } = req.body ?? {};
+    if (!audioData || typeof audioData !== 'string') {
+      return res.status(400).json({ success: false, message: 'audioData base64 string is required' });
+    }
+
+    const cleanBase64 = audioData.includes('base64,') ? audioData.split('base64,')[1] : audioData;
+    const cleanMimeType = mimeType || 'audio/webm';
+
+    const transcript = await transcribeAudioWithAI(cleanBase64, cleanMimeType, language || 'en');
+    res.json({ success: true, transcript });
+  } catch (err) {
+    res.status(200).json({ success: false, message: err.message, transcript: '' });
   }
 };

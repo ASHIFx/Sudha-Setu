@@ -32,7 +32,7 @@ export default function IntakePage() {
     setTextInput(transcript);
   }, []);
 
-  const { listening, supported, ttsSupported, toggle, reset, speak, stopSpeaking, speaking } = useSpeech({
+  const { listening, transcribing, supported, ttsSupported, toggle, reset, speak, stopSpeaking, speaking } = useSpeech({
     lang: langObj.locale,
     onResult: onSpeechResult,
   });
@@ -150,10 +150,21 @@ export default function IntakePage() {
               <div>
                 <p className="text-xs font-bold text-white flex items-center gap-2">
                   {listening && <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />}
-                  <span>{listening ? t.charak.listening : `${t.charak.tapToSpeak} (${langObj.label})`}</span>
+                  {transcribing && <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-spin" />}
+                  <span>
+                    {transcribing
+                      ? 'AI Transcribing Voice…'
+                      : listening
+                      ? t.charak.listening
+                      : `${t.charak.tapToSpeak} (${langObj.label})`}
+                  </span>
                 </p>
                 <p className="text-xs text-emerald-100/60 mt-0.5">
-                  {listening ? t.charak.listeningDesc : t.charak.idleDesc}
+                  {transcribing
+                    ? 'Processing audio with AI for accurate symptom recognition…'
+                    : listening
+                    ? t.charak.listeningDesc
+                    : t.charak.idleDesc}
                 </p>
               </div>
 
@@ -161,15 +172,23 @@ export default function IntakePage() {
                 <button
                   type="button"
                   onClick={toggle}
-                  disabled={submitting}
+                  disabled={submitting || transcribing}
                   className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     listening
                       ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse shadow-lg shadow-rose-600/30'
+                      : transcribing
+                      ? 'bg-amber-600 text-white'
                       : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
                   }`}
                 >
                   {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  <span>{listening ? t.charak.stopVoice : t.charak.startVoice}</span>
+                  <span>
+                    {transcribing
+                      ? 'Transcribing…'
+                      : listening
+                      ? t.charak.stopVoice
+                      : t.charak.startVoice}
+                  </span>
                 </button>
               ) : (
                 <span className="text-xs text-amber-300">Type below</span>

@@ -4,7 +4,11 @@ import {
   extractCitations,
 } from './ragService.js';
 
-const MODELS = [process.env.GEMINI_MODEL || 'gemini-3.5-flash'];
+const MODELS = [
+  process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+];
 
 const BASE_SYSTEM_INSTRUCTION =
   'You are Sudha Setu AI, an intelligent clinical health triage and wellness assistant. ' +
@@ -164,4 +168,50 @@ export const sendChatMessage = async (storedMessages, userMessage, { retrievedRu
   }
 
   throw new Error('All Gemini models failed to generate chat response');
+};
+
+export const transcribeAudioWithAI = async (audioBase64, mimeType = 'audio/webm', language = 'en') => {
+  const client = getClient();
+  if (!client) {
+    throw new Error('Gemini API key is not configured on the server');
+  }
+
+  const prompt = `You are an accurate medical speech-to-text transcriber for the Charak Vaani health assistant.
+The patient spoke in ${language || 'Hindi, English, Bengali, Marathi, or Tamil'}.
+Listen to the audio and transcribe their spoken words verbatim into text.
+If spoken in Hindi, Marathi, Bengali, or Tamil, output in that language script or clear readable Roman script.
+Do not summarize, reply, or add clinical commentary. Return ONLY the verbatim transcribed text.
+If there is only silence or background noise, reply with: [UNCLEAR]`;
+
+  for (const model of MODELS) {
+    try {
+      const response = await client.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: audioBase64,
+                },
+              },
+              { text: prompt },
+            ],
+          },
+        ],
+      });
+
+      const text = response.text ? response.text.trim() : '';
+      if (text && text !== '[UNCLEAR]') {
+        return text;
+      }
+      return '';
+    } catch (err) {
+      console.warn(`[aiService] Transcription with ${model} failed: ${err.message}`);
+    }
+  }
+
+  throw new Error('Speech transcription could not process audio');
 };

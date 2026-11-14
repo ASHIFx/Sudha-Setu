@@ -1,9 +1,11 @@
 import { Router } from 'express';
 
-import { chat, getChatHistory } from '../controllers/aiController.js';
+import { chat, getChatHistory, transcribeAudio } from '../controllers/aiController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
+
+router.post('/transcribe', transcribeAudio);
 
 router.use(protect);
 
